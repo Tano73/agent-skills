@@ -10,8 +10,6 @@ There are no build steps, no compiled artifacts, and no package manager. The rep
 
 ```
 agent-skills/
-├── .github/
-│   └── prompts/              # Copilot agent prompt files (.prompt.md)
 ├── skills/
 │   └── <skill-name>/
 │       ├── SKILL.md          # Skill definition (required)

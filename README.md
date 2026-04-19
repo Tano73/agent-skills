@@ -17,8 +17,6 @@ Each skill is a self-contained directory containing a `SKILL.md` prompt file, ev
 
 ```
 agent-skills/
-├── .github/
-│   └── prompts/              # Copilot agent prompt files (.prompt.md)
 ├── skills/
 │   └── <skill-name>/
 │       ├── SKILL.md          # Skill definition: YAML frontmatter + agent instructions
