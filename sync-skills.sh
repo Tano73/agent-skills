@@ -262,8 +262,10 @@ cmd_sync() {
     echo "    [s] skip"
 
     local choice=""
+    # Read from /dev/tty explicitly: the while loop redirects stdin from
+    # collect_skills, so a plain `read` would consume that instead of the terminal.
     while [[ ! "$choice" =~ ^[pPuUsS]$ ]]; do
-      read -rp "    Choice [p/u/s]: " choice
+      read -rp "    Choice [p/u/s]: " choice </dev/tty
     done
 
     case "${choice,,}" in
