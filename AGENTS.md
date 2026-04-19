@@ -10,6 +10,8 @@ There are no build steps, no compiled artifacts, and no package manager. The rep
 
 ```
 agent-skills/
+├── .github/
+│   └── prompts/              # Copilot agent prompt files (.prompt.md)
 ├── skills/
 │   └── <skill-name>/
 │       ├── SKILL.md          # Skill definition (required)
@@ -17,6 +19,7 @@ agent-skills/
 │       │   └── evals.json    # Evaluation cases (required)
 │       ├── scripts/          # Python or shell helper scripts (optional)
 │       └── references/       # Reference data / lookup tables (optional)
+├── sync-skills.sh            # Sync tool: repo skills/ ↔ ~/.agents/skills/
 ├── AGENTS.md
 ├── LICENSE
 └── README.md
@@ -44,7 +47,7 @@ Rules for `SKILL.md`:
 - The `name` field must match the directory name exactly (kebab-case).
 - The `description` field is the **trigger text** — the agent reads it to decide whether to invoke the skill. Make it explicit about activation keywords (in any language if the skill is multilingual).
 - Body sections are free-form Markdown. Use `##` for top-level sections inside the skill.
-- Reference any bundled scripts with absolute paths using `$HOME/.copilot/skills/<skill-name>/scripts/<file>`.
+- Reference any bundled scripts with absolute paths using `$HOME/.agents/skills/<skill-name>/scripts/<file>`.
 - Reference any bundled data files with relative paths like `references/<file>`.
 
 ## evals/evals.json anatomy
@@ -71,6 +74,18 @@ Rules for `SKILL.md`:
 - `files` lists any fixture files needed by the eval (paths relative to the eval runner working directory). Use `[]` when no files are needed.
 - `expectations` is optional but recommended — list each assertion as a plain-English sentence that an evaluator can check programmatically or manually.
 - Cover at least: the happy path, an edge case, and a negative case (input that should *not* trigger the skill or should produce a graceful error).
+
+## Syncing skills
+
+Use `sync-skills.sh` to synchronize skills between the repo and `$HOME/.agents/skills/`:
+
+```bash
+./sync-skills.sh status        # show sync state of all skills
+./sync-skills.sh sync          # interactive sync (REPO_ONLY + DIFFERS)
+./sync-skills.sh sync --all    # also include INSTALL_ONLY skills
+```
+
+The script uses SHA-256 checksums to detect differences and `rsync` (with `cp` fallback) for copying.
 
 ## Adding a new skill
 

@@ -17,24 +17,40 @@ Each skill is a self-contained directory containing a `SKILL.md` prompt file, ev
 
 ```
 agent-skills/
+├── .github/
+│   └── prompts/              # Copilot agent prompt files (.prompt.md)
 ├── skills/
 │   └── <skill-name>/
 │       ├── SKILL.md          # Skill definition: YAML frontmatter + agent instructions
-│       ├── LICENSE           # (optional) Skill-specific license
 │       ├── evals/
 │       │   └── evals.json    # Evaluation cases for automated testing
 │       ├── scripts/          # (optional) Helper scripts invoked by the skill
 │       └── references/       # (optional) Reference data or lookup tables
+├── sync-skills.sh            # Sync tool: repo skills/ ↔ ~/.agents/skills/
 ├── AGENTS.md
+├── LICENSE
 └── README.md
 ```
 
 ## Usage
 
-Install any skill into your Copilot agent environment by copying the skill directory into `~/.copilot/skills/`. The agent will discover and load it automatically on next startup.
+Use `sync-skills.sh` to install or update skills from this repo into your agent environment:
 
 ```bash
-cp -r skills/ffpa-analyzer ~/.copilot/skills/
+# Show sync status between repo and ~/.agents/skills/
+./sync-skills.sh status
+
+# Interactively sync REPO_ONLY and DIFFERS skills
+./sync-skills.sh sync
+
+# Also include skills present only in the install dir
+./sync-skills.sh sync --all
+```
+
+Or install a single skill manually:
+
+```bash
+cp -r skills/ffpa-analyzer ~/.agents/skills/
 ```
 
 ## License
