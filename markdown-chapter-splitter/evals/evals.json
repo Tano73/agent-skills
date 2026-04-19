@@ -1,0 +1,41 @@
+{
+  "skill_name": "markdown-chapter-splitter",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Ho un file Markdown molto grande in /tmp/architecture.md. Voglio dividerlo in file piu piccoli, uno per ogni capitolo del documento. Puoi farlo?",
+      "expected_output": "L'agente usa la skill markdown-chapter-splitter, crea la cartella /tmp/architecture-chapters/, salva un eventuale contenuto iniziale in 00-preface.md e genera un file .md per ogni titolo di livello 1 (# ...), mantenendo i sottotitoli nello stesso file.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "Split /tmp/book.md into one Markdown file per chapter. The document has no top-level # headings, but the real chapters appear as plain text markers like `CHAPTER 1` followed by the title on the next line. Keep the original file untouched.",
+      "expected_output": "The agent uses the bundled splitter script in default mode, the script detects a reliable text-based numbered chapter sequence, splits automatically in TEXT_CHAPTER mode, and reports the output directory without asking for a generic H2 fallback.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Devo separare /tmp/manuale.md in tanti file, uno per capitolo, ma il file usa righe come `## 1` seguite da `## WHAT IS DESIGN AND ARCHITECTURE?` invece di veri titoli H1.",
+      "expected_output": "L'agente rileva la sequenza numerata dei capitoli anche se i delimitatori H1 non ci sono, usa la modalita TEXT_CHAPTER e crea un file per capitolo senza degradare automaticamente a tutte le sezioni H2.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Devo separare /tmp/manuale-con-prefazione.md in tanti file, uno per capitolo. Nel file c'e anche una prefazione prima del primo capitolo e non c'e nessuna sequenza affidabile di capitoli nel testo, pero ci sono molti ## sottotitoli.",
+      "expected_output": "L'agente esegue il tentativo standard, constata che non esiste una sequenza affidabile di capitoli H1 o testuali, e spiega che il file non espone veri confini di capitolo senza degradare automaticamente a tutti i titoli ##.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Split /tmp/report.md into one file per chapter. The file already contains headings like `## CHAPTER 1 Layered Architecture` and `## CHAPTER 2 Event-Driven Architecture`.",
+      "expected_output": "The agent uses the splitter script, the script detects the numbered chapter sequence from the chapter-like H2 headings, splits in TEXT_CHAPTER mode, and creates one file per real chapter instead of one file per every generic H2 subsection.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Dividi /tmp/domain-book.md in un file per capitolo. Il documento non ha H1 veri, ma contiene capitoli come `Chapter One. Crunching Knowledge`, `Chapter Two. Communication and the Use of Language` e poi i contenuti del capitolo.",
+      "expected_output": "L'agente usa lo script della skill in modalita standard, la rilevazione testuale riconosce i numeri di capitolo scritti in lettere, seleziona i veri inizi capitolo invece dell'indice iniziale, e produce un file per capitolo in modalita TEXT_CHAPTER senza usare il fallback H2.",
+      "files": []
+    }
+  ]
+}

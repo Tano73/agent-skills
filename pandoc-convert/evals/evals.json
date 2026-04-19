@@ -1,0 +1,23 @@
+{
+  "skill_name": "pandoc-convert",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Ho un file README.md nel mio progetto e devo consegnarlo come documento Word al mio responsabile entro stasera. Il file è in /tmp/README.md. Puoi convertirlo?",
+      "expected_output": "Il file viene convertito da Markdown a DOCX usando pandoc e salvato come /tmp/README.docx. L'agente chiede il formato desiderato se non specificato, poi esegue la conversione e conferma il file di output.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "I need to convert this HTML report to a Markdown file so I can edit it easily. The file is at /tmp/report.html.",
+      "expected_output": "The file is converted from HTML to Markdown using pandoc and saved as /tmp/report.md. The agent confirms the output file path.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Devo trasformare il mio documento Word in un file Markdown. Il file si chiama /tmp/documento.docx.",
+      "expected_output": "Il file viene convertito da DOCX a Markdown usando pandoc e salvato come /tmp/documento.md. L'agente conferma il percorso del file di output.",
+      "files": []
+    }
+  ]
+}

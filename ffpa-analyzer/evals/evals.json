@@ -1,0 +1,142 @@
+{
+  "skill_name": "ffpa-analyzer",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Devo stimare i function point per un nuovo sviluppo: un'applicazione web di gestione contratti clienti per una compagnia telefonica. Le funzionalità richieste sono:\n1. Anagrafica cliente (nome, cognome, CF, P.IVA, indirizzo, email, telefono, data nascita, tipo cliente - privato/azienda) con inserimento, modifica e cancellazione\n2. Gestione contratti (numero contratto, cliente associato, offerta, data inizio, data fine, stato, note - circa 12 campi) con inserimento, modifica, cancellazione\n3. Lista contratti con filtri per cliente, stato e periodo\n4. Dettaglio contratto con tutti i campi\n5. Export CSV della lista contratti filtrata\n6. Invio notifica verso sistema CRM esterno quando un contratto cambia stato (flusso con: numero contratto, cliente, vecchio stato, nuovo stato, timestamp)\n7. Ricezione aggiornamenti tariffe da sistema di billing esterno (flusso con: codice offerta, nome offerta, prezzo, valuta, data validità - 5 campi)\n8. Calcolo automatico del valore residuo del contratto (giorni rimanenti × tariffa giornaliera)\nCalcola i FFP totali.",
+      "expected_output": "Tabella con tutti gli oggetti logici classificati per tipo (A/B/C/D), complessità e FFP, riepilogo per categoria, totale FFP finale, e sezione assunzioni.",
+      "files": [],
+      "expectations": [
+        "Usa la codifica FFPA (A.1, A.2, B.1, B.2, B.3, B.4, C.1, C.2, D.1) per classificare gli oggetti",
+        "Identifica almeno 2 entità logiche interne (A.1): Anagrafica Cliente e Contratto",
+        "Identifica un oggetto B.2 per la ricezione aggiornamenti tariffe dal sistema billing esterno",
+        "Identifica un oggetto C.2 per l'invio notifica verso il CRM esterno",
+        "Identifica un oggetto D.1 per il calcolo automatico del valore residuo del contratto",
+        "Produce un totale numerico in FFP",
+        "Include una sezione Assunzioni o Note con le ipotesi fatte durante l'analisi",
+        "Include un riepilogo per categoria (A, B, C, D)"
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "Analizza questo codice Python di una semplice API REST e calcola i function point:\n\n```python\n# models.py\nclass Prodotto:\n    id: int\n    codice: str\n    nome: str\n    descrizione: str\n    prezzo: float\n    categoria_id: int\n    fornitore_id: int\n    scorta: int\n    unita_misura: str\n    attivo: bool\n\nclass Categoria:\n    id: int\n    nome: str\n    descrizione: str\n\nclass Fornitore:\n    id: int\n    ragione_sociale: str\n    piva: str\n    email: str\n    telefono: str\n    indirizzo: str\n\n# api.py (Flask)\n@app.route('/prodotti', methods=['GET'])         # lista prodotti con filtri per categoria\n@app.route('/prodotti/<id>', methods=['GET'])    # dettaglio prodotto\n@app.route('/prodotti', methods=['POST'])        # crea prodotto\n@app.route('/prodotti/<id>', methods=['PUT'])    # modifica prodotto\n@app.route('/prodotti/<id>', methods=['DELETE']) # elimina prodotto\n@app.route('/categorie', methods=['GET'])        # lista categorie (dropdown)\n@app.route('/fornitori', methods=['GET'])        # lista fornitori (dropdown)\n@app.route('/prodotti/export', methods=['GET']) # export CSV\n@app.route('/inventario/sync', methods=['POST']) # riceve sync da sistema magazzino esterno (codice, nome, scorta, magazzino, data_aggiornamento)\n\n# scheduler.py\ndef calcola_valore_inventario():  # job giornaliero: somma (prezzo × scorta) per categoria\n    pass\n```\n\nQuanti FFP ha questa applicazione?",
+      "expected_output": "Tabella function point partendo dall'analisi del codice, con mapping esplicito tra classi/endpoint e oggetti FFPA, totale FFP.",
+      "files": [],
+      "expectations": [
+        "Usa la codifica FFPA per classificare gli oggetti",
+        "Mappa le classi Prodotto, Categoria, Fornitore a entità logiche (A.1 o A.2)",
+        "Mappa POST/PUT/DELETE → B.1 (form aggiornamento base dati)",
+        "Mappa le GET di lista e dettaglio → B.4 (visualizzazione informazioni)",
+        "Mappa le GET dropdown (categorie, fornitori) → B.3 (valori selezionabili)",
+        "Mappa /inventario/sync POST → B.2 (input da altra applicazione)",
+        "Mappa /prodotti/export GET → C.1 (report/export)",
+        "Mappa calcola_valore_inventario → B.5 (elaborazione interna) o D.1 (calcolo interno)",
+        "Produce un totale numerico in FFP"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Ho una Enhancement (evolutiva) su un'applicazione di ticketing esistente. Devo misurare solo i delta. Le modifiche richieste sono:\n\nNUOVE FUNZIONALITÀ (ADD):\n- Aggiunta campo 'priorità' (bassa/media/alta/critica) al ticket — il campo va mostrato nella lista e nel dettaglio e deve potersi modificare dalla form di editing\n- Nuovo report settimanale: numero ticket aperti/chiusi/in lavorazione per categoria e per tecnico assegnato (circa 8 colonne)\n- Notifica automatica via API verso sistema di monitoring esterno quando un ticket diventa 'critico' (payload: id ticket, titolo, categoria, cliente, timestamp — 5 campi)\n\nFUNZIONALITÀ MODIFICATE (CHG):\n- La form di creazione ticket viene estesa con 3 nuovi campi (ora totale: 11 campi)\n- La lista ticket viene estesa con 2 nuove colonne (ora totale: 14 colonne)\n\nFUNZIONALITÀ ELIMINATE (DEL):\n- Rimosso il vecchio export XML dei ticket (sarà sostituito da API)\n\nCalcola i FFP dell'evolutiva distinguendo ADD, CHG e DEL.",
+      "expected_output": "Tabella con oggetti ADD/CHG/DEL classificati, totale per tipo di modifica, FFP complessivi dell'evolutiva.",
+      "files": [],
+      "expectations": [
+        "Distingue esplicitamente ADD, CHG e DEL nel conteggio",
+        "Identifica che il campo 'priorità' genera un ADD B.3 (dropdown valori selezionabili)",
+        "Identifica che la form di editing viene CHG → B.1 con complessità (b) 11 elementi",
+        "Identifica che la lista ticket viene CHG → B.4 con complessità (b) 14 colonne",
+        "Identifica il nuovo report settimanale come ADD C.1 complessità (b) 8 colonne",
+        "Identifica la notifica al monitoring come ADD C.2 complessità (a) 5 campi → 3,5 FFP",
+        "Identifica il vecchio export XML come DEL C.1",
+        "Produce un totale numerico in FFP dell'evolutiva"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Devo misurare i function point di un DataMart Vendite appena sviluppato. Il sistema riceve dati da tre sorgenti:\n\n1. Sistema CRM (tramite tabella di scambio condivisa): fornisce i dati cliente — id_cliente, nome, segmento, regione, canale_acquisizione (5 campi)\n2. Sistema ERP (accesso diretto al DB dell'ERP, query su struttura nota): fornisce i dati ordine — id_ordine, id_cliente, id_prodotto, data_ordine, quantità, importo, sconto (7 campi)\n3. Sistema Prodotti (tramite servizio REST in lettura esposto dal sistema prodotti): il DataMart chiama l'API passando id_prodotto e riceve — id_prodotto, nome_prodotto, categoria, prezzo_listino, unità_misura (5 campi ricevuti, il campo id_prodotto è sia in richiesta che in risposta)\n\nStrutture dati interne del DataMart:\n- Tabella dei Fatti 'Vendite': id_vendita, id_cliente, id_prodotto, data, quantità, importo, sconto, margine, canale (9 campi logici, escluse le FK)\n- Dimensione 'Cliente': id_cliente, nome, segmento, regione, canale_acquisizione (5 campi)\n- Dimensione 'Prodotto': id_prodotto, nome, categoria, prezzo_listino, unità_misura (5 campi)\n- Dimensione 'Tempo': anno, trimestre, mese, settimana, giorno_settimana (5 campi)\n- Staging Area: tabelle tecniche temporanee di appoggio per le trasformazioni ETL\n\nProcessi ETL e output:\n- Job ETL giornaliero che carica i dati CRM nella dimensione Cliente (da tabella di scambio)\n- Job ETL giornaliero che carica i dati ERP nella tabella dei Fatti Vendite (da accesso diretto)\n- Job ETL settimanale che chiama l'API Prodotti e aggiorna la dimensione Prodotto\n- Calcolo del margine = (importo - sconto) × coefficiente_margine_categoria (regola di business nel job ETL Vendite)\n- Dashboard interattiva Vendite per periodo: filtri per anno/trimestre/mese, regione, segmento cliente, categoria prodotto; mostra: importo totale, quantità, margine medio, numero ordini — circa 14 campi totali\n- Report PDF mensile 'Performance Commerciale': filtri mese+anno; colonne: regione, segmento, importo, quantità, margine, trend_mese_precedente — 6 elementi\n- Flusso verso sistema BI aziendale: invio mensile degli aggregati (regione, segmento, importo_totale, margine_totale, n_ordini — 5 campi)\n\nCalcola i FFP totali del DataMart Vendite.",
+      "expected_output": "Tabella oggetti logici con classificazione corretta di A.1 (fatti e dimensioni), B.2 (flussi in ingresso con scenario corretto per ciascuna sorgente), B.5 (ETL jobs), D.1 (calcolo margine), B.4 (dashboard), C.1 (report PDF), C.2 (flusso BI), esclusione staging area; riepilogo per categoria e totale FFP.",
+      "files": [],
+      "expectations": [
+        "Conta 4 entità logiche interne A.1: Fatti Vendite (9 campi), Dim Cliente (5), Dim Prodotto (5), Dim Tempo (5)",
+        "Per la sorgente CRM (tabella di scambio): conta 1 B.2 fascia (a) con 5 campi — scenario tabella di scambio",
+        "Per la sorgente ERP (accesso diretto al DB): conta 1 A.2 (entità esterna referenziata in sola lettura) con 7 campi fascia (a) — scenario accesso diretto, nessun B.2",
+        "Per la sorgente Prodotti (servizio REST in lettura): conta 1 B.2 — il campo id_prodotto è sia in richiesta che in risposta e si conta una volta sola; elementi distinti = 5 campi (fascia a)",
+        "Esclude le tabelle della Staging Area perché tabelle tecniche di appoggio non richieste dall'utente",
+        "Conta 3 oggetti B.5: job ETL CRM, job ETL ERP, job ETL Prodotti",
+        "Conta 1 D.1 per il calcolo del margine nel job ETL Vendite",
+        "Conta 1 B.4 fascia (b) per la dashboard interattiva (14 campi — fascia b 6-20)",
+        "Conta 1 C.1 fascia (b) per il report PDF mensile (6 elementi + 2 filtri = 8 elementi — fascia b 6-20)",
+        "Conta 1 C.2 fascia (a) per il flusso verso il sistema BI (5 campi — fascia a)",
+        "Produce un totale numerico in FFP",
+        "Include sezione assunzioni con le scelte fatte per gli scenari di condivisione dati"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Un'azienda ha acquisito un ERP configurabile per la gestione degli acquisti. Le attività da misurare riguardano la configurazione iniziale del package per l'area Purchase-to-Pay, più alcune funzionalità sviluppate ad hoc.\n\nCONFIGURAZIONE DEL PACKAGE:\nSono state configurate le seguenti entità:\n\n1. Fornitori: 12 attributi (ragione sociale, P.IVA, paese, categoria merceologica, rating, banca_iban, condizioni_pagamento, sconto_accordato, limite_credito, referente, email, telefono)\n2. Categorie Merceologiche: 4 attributi (codice, descrizione, responsabile_acquisti, budget_annuo)\n3. Articoli Acquistabili: 8 attributi (codice, descrizione, unità_misura, categoria, fornitore_preferred, prezzo_riferimento, lead_time, attivo)\n4. Centro di Costo: 5 attributi (codice, descrizione, responsabile, budget, divisione)\n\nRegole di business configurate:\n- Associazione Fornitore → Categorie Merceologiche abilitate (bidirezionale: ogni fornitore ha N categorie, ogni categoria ha M fornitori)\n- Associazione Articolo → Fornitori alternativi con prezzo (monodirezionale: ogni articolo può avere M fornitori con prezzi differenti)\n- Workflow di approvazione ordini (macchina a stati con 4 stati): Bozza → In approvazione → Approvato → Inviato; da Bozza si può andare solo a 'In approvazione'; da 'In approvazione' si può andare ad 'Approvato' o tornare a 'Bozza'; da 'Approvato' si può andare a 'Inviato'\n\nSVILUPPO AD HOC (funzionalità non coperte dal package):\n- Interfaccia di importazione fornitori da file CSV (campi: ragione_sociale, piva, paese, categoria, email, telefono — 6 campi): inserisce o aggiorna i fornitori nel sistema\n- Report analitico spese per fornitore e categoria: filtri periodo+categoria+fornitore (3 campi); colonne output: fornitore, categoria, n_ordini, importo_totale, sconto_medio, risparmio_vs_listino — 6 campi output. Totale elementi distinti = 3 filtri + 6 output = 9\n- Calcolo automatico del risparmio rispetto al prezzo di listino: (prezzo_riferimento - prezzo_accordato) × quantità_ordinata\n\nCalcola separatamente i CP (Configuration Points) per la parte di configurazione e i FFP per la parte di sviluppo ad hoc. Fornisci il totale complessivo.",
+      "expected_output": "Sezione Configurazione con formula CP = 0,2×dati + 0,5×liste + regole, dettaglio degli oggetti configurati; sezione Sviluppo con tabella FFPA; totali separati CP e FFP.",
+      "files": [],
+      "expectations": [
+        "Calcola i CP con la formula FP(Conf) = 0,2 × dati + 0,5 × liste + regole",
+        "Conta 4 liste configurate: Fornitori, Categorie Merceologiche, Articoli Acquistabili, Centro di Costo",
+        "Conta i dati: 12 + 4 + 8 + 5 = 29 attributi totali",
+        "Calcola le regole del workflow a macchina a stati: 1 regola per ogni stato da cui è possibile una transizione — Bozza→1, In approvazione→2, Approvato→1 = 4 regole workflow",
+        "Conta le regole di associazione: Fornitore↔Categorie bidirezionale = 2 regole; Articolo→Fornitori monodirezionale = 1 regola; totale regole associazione = 3",
+        "Totale regole = 4 (workflow) + 3 (associazioni) = 7 regole",
+        "Calcola CP = 0,2×29 + 0,5×4 + 7 = 5,8 + 2 + 7 = 14,8 CP",
+        "Per lo sviluppo ad hoc: conta 1 B.2 fascia (b) per l'importazione CSV fornitori (6 campi — fascia b 5-15)",
+        "Per lo sviluppo ad hoc: conta 1 C.1 fascia (b) per il report analitico (9 elementi — fascia b 6-20)",
+        "Per lo sviluppo ad hoc: conta 1 D.1 per il calcolo del risparmio",
+        "Produce totali separati: CP per configurazione e FFP per sviluppo"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Analizza il seguente scenario multi-applicazione e calcola i FFP per CIASCUNA applicazione coinvolta.\n\nSCENARIO: Sistema di gestione sinistri assicurativi composto da 3 applicazioni.\n\nAPPLICAZIONE A — Portale Clienti (da misurare):\n- Form apertura sinistro: campi inseriti dall'utente: polizza, data_evento, tipo_danno, descrizione, importo_stimato, foto_allegata (6 campi)\n- Visualizzazione stato sinistro: mostra id_sinistro, data_apertura, stato, liquidatore_assegnato, importo_liquidato, note_istruttoria — 6 campi\n- Al salvataggio del sinistro, invia una notifica al Sistema Liquidazione (App B) tramite API REST POST con payload: id_sinistro, polizza, tipo_danno, importo_stimato, timestamp (5 campi)\n- Riceve in tempo reale aggiornamenti di stato dal Sistema Liquidazione (App B) tramite webhook: payload ricevuto = id_sinistro, nuovo_stato, importo_liquidato, note (4 campi)\n\nAPPLICAZIONE B — Sistema Liquidazione (da misurare):\n- Riceve la notifica di nuovo sinistro dal Portale Clienti (App A): id_sinistro, polizza, tipo_danno, importo_stimato, timestamp (5 campi)\n- Entità interna Sinistro: id_sinistro, polizza, data_apertura, tipo_danno, descrizione, importo_stimato, stato, liquidatore, importo_liquidato, note, data_chiusura (11 campi logici)\n- Entità interna Liquidatore: id_liquidatore, nome, cognome, specializzazione, carico_lavoro_attuale (5 campi)\n- Form di gestione istruttoria (usata dal liquidatore): campi = stato (dropdown), liquidatore_assegnato (dropdown), importo_liquidato, note_istruttoria, data_chiusura — 5 campi modificabili\n- Lista sinistri assegnati al liquidatore: filtri per stato e periodo (2 filtri); colonne: id_sinistro, polizza, tipo_danno, stato, importo_stimato, data_apertura — 6 colonne. Totale elementi = 2+6 = 8\n- Invia aggiornamento stato al Portale Clienti (App A) via webhook: id_sinistro, nuovo_stato, importo_liquidato, note (4 campi)\n- Estrae mensilmente dati verso il sistema di Reporting Attuariale (App C) tramite flusso batch: sinistro_id, polizza, tipo_danno, importo_liquidato, durata_giorni, esito (6 campi)\n\nAPPLICAZIONE C — Reporting Attuariale (da misurare):\n- Riceve il flusso mensile dall'App B: 6 campi\n- Entità interna Sinistro_Storico: tutti i 6 campi ricevuti\n- Report sinistrosità per tipo danno e periodo: filtri anno+tipo_danno (2 filtri); colonne output: tipo_danno, n_sinistri, importo_medio, importo_totale, durata_media — 5 colonne. Totale elementi = 2+5 = 7\n- Calcolo indice di sinistrosità: (totale_importi_liquidati / totale_premi_raccolti) × 100 — richiede accesso in sola lettura all'entità Premi dal Sistema Polizze esterno (10 campi)\n- Dropdown tipi di danno (valori statici da DB)\n\nCalcola i FFP per ciascuna applicazione separatamente, poi fornisci il totale complessivo e una tabella di raccordo B.2/C.2.",
+      "expected_output": "Tre sezioni distinte (App A, App B, App C) ciascuna con tabella FFPA e FFP totali; tabella di raccordo che mostra la simmetria B.2/C.2 tra le applicazioni.",
+      "files": [],
+      "expectations": [
+        "App A — conta 1 B.1 fascia (b) per il form apertura sinistro (6 campi — fascia b 5-15)",
+        "App A — conta 1 B.4 fascia (b) per la visualizzazione stato sinistro (6 campi — fascia b)",
+        "App A — conta 1 C.2 fascia (a) per la notifica inviata all'App B (5 campi — fascia b 5-15: attenzione, verifica la fascia corretta per B.2/C.2 con 5 elementi)",
+        "App A — conta 1 B.2 fascia (a) per il webhook ricevuto dall'App B (4 campi — fascia a 1-4)",
+        "App B — conta 1 B.2 fascia (b) per la ricezione notifica dall'App A (5 campi — fascia b 5-15)",
+        "App B — conta 2 entità logiche interne A.1: Sinistro (11 campi, fascia a) e Liquidatore (5 campi, fascia a)",
+        "App B — conta 1 B.1 fascia (b) per il form gestione istruttoria (5 campi — fascia b 5-15)",
+        "App B — conta 1 B.4 fascia (b) per la lista sinistri assegnati (8 elementi totali — fascia b 6-20)",
+        "App B — conta 1 C.2 fascia (a) per il webhook verso App A (4 campi — fascia a)",
+        "App B — conta 1 C.2 fascia (b) per il flusso verso App C (6 campi — fascia b 5-15)",
+        "App C — conta 1 B.2 fascia (b) per il flusso ricevuto dall'App B (6 campi — fascia b)",
+        "App C — conta 1 A.1 fascia (a) per Sinistro_Storico (6 campi)",
+        "App C — conta 1 A.2 fascia (a) per l'entità Premi letta dal Sistema Polizze esterno (10 campi — fascia a)",
+        "App C — conta 1 C.1 fascia (b) per il report sinistrosità (7 elementi — fascia b)",
+        "App C — conta 1 D.1 per il calcolo indice di sinistrosità",
+        "App C — conta 1 B.3 per il dropdown tipi di danno",
+        "Produce FFP totali distinti per ciascuna delle 3 applicazioni e mostra la corrispondenza B.2↔C.2 tra le app"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Analizza il seguente insieme di requisiti e calcola i FFP applicando correttamente le regole di esclusione (dati di decodifica, tabelle tecniche) e il principio del riuso funzionale.\n\nApplicazione: Sistema di Gestione Risorse Umane (HR)\n\nSTRUTTURE DATI presenti nel DB:\n- Dipendente: id, nome, cognome, CF, data_nascita, data_assunzione, matricola, email, telefono, livello_contrattuale, sede, centro_costo, reparto, responsabile_id, tipo_contratto, ral, attivo — 16 campi\n- Contratto (entità separata, collegata a Dipendente): id_contratto, id_dipendente, data_inizio, data_fine, tipo, monte_ore, note — 7 campi\n- Tabella SEDI: codice_sede, descrizione_sede (2 campi — usata solo come lookup)\n- Tabella REPARTI: codice_reparto, descrizione_reparto (2 campi — usata solo come lookup)\n- Tabella TIPI_CONTRATTO: codice, descrizione (2 campi — valori statici: TD, TI, CO, PA)\n- Tabella LIVELLI_CONTRATTUALI: codice, descrizione, livello_minimo_ral, livello_massimo_ral (4 campi — i range RAL vengono aggiornati annualmente dalla Direzione HR e sono usati per validare lo stipendio)\n- Tabella AUDIT_LOG: id, tabella_origine, id_record, operazione, utente, timestamp, old_value, new_value (8 campi — log tecnico generato automaticamente dal framework)\n- Tabella SESSIONI_UTENTE: id_sessione, id_utente, token, ip, created_at, expires_at (6 campi — gestione sessioni applicative)\n\nFUNZIONALITÀ:\n1. Scheda Dipendente (inserimento, modifica, cancellazione): form con tutti i 16 campi del dipendente. I dati del contratto (7 campi) sono su una seconda tab della stessa form, gestiti nella stessa transazione.\n2. Lista Dipendenti con filtri: filtri sede, reparto, tipo_contratto, attivo (4 filtri); colonne: matricola, nome, cognome, sede, reparto, tipo_contratto, livello, ral — 8 colonne. Totale elementi = 4+8 = 12\n3. Ricerca rapida dipendente: popup di selezione (filtro nome/cognome/matricola, mostra id+nome+cognome+matricola — 4 campi output). Viene riutilizzata in 3 punti diversi dell'applicazione: nella form cedolino, nella form nota spese, nella form trasferta.\n4. Report PDF organico per sede: filtri sede+attivo (2 filtri); colonne: nome, cognome, sede, reparto, tipo_contratto, livello_contrattuale, ral — 7 colonne. Totale = 2+7 = 9\n5. Report PDF organico per reparto: filtri reparto+attivo (2 filtri); colonne: nome, cognome, sede, reparto, tipo_contratto, livello_contrattuale, ral — 7 colonne. Totale = 2+7 = 9. (Stesso tracciato del report per sede, filtro diverso.)\n6. Validazione RAL: al salvataggio della scheda dipendente, verifica che il RAL sia compreso nel range min-max del livello contrattuale selezionato\n7. Dropdown Sedi: lista selezionabile usata nella scheda dipendente e nei filtri della lista dipendenti\n8. Dropdown Reparti: lista selezionabile usata nella scheda dipendente e nei filtri della lista dipendenti\n9. Notifica email automatica al responsabile HR quando viene inserito un nuovo dipendente: destinatario variabile (email responsabile), oggetto variabile ('Nuovo dipendente: [nome]'), corpo con i campi variabili: nome, cognome, sede, data_assunzione, tipo_contratto — 5 campi variabili nel corpo\n\nCalcola i FFP. Documenta esplicitamente: (a) quali strutture dati hai escluso e perché, (b) come hai applicato il riuso funzionale.",
+      "expected_output": "Tabella FFPA con esclusioni motivate, riuso funzionale documentato, e totale FFP.",
+      "files": [],
+      "expectations": [
+        "Conta 2 entità logiche A.1: Dipendente (16 campi, fascia a) e Contratto (7 campi, fascia a)",
+        "Esclude SEDI come dato di decodifica (solo codice+descrizione, lookup)",
+        "Esclude REPARTI come dato di decodifica (solo codice+descrizione, lookup)",
+        "Esclude TIPI_CONTRATTO come dato di decodifica (valori statici codice+descrizione)",
+        "Conta LIVELLI_CONTRATTUALI come A.1 (4 campi, fascia a) perché contiene range RAL usati per logica di business e aggiornati dall'utente — NON è semplice decodifica",
+        "Esclude AUDIT_LOG come tabella tecnica (generata automaticamente dal framework, non requisito funzionale)",
+        "Esclude SESSIONI_UTENTE come tabella tecnica (gestione sessioni infrastrutturale)",
+        "Conta 1 B.1 fascia (c) per la Scheda Dipendente: 16 campi dipendente + 7 contratto = 23 elementi distinti > 15 → fascia c",
+        "Conta 4 B.3 per i dropdown presenti nella form: Sede, Reparto, Tipo Contratto, Livello Contrattuale",
+        "Conta 1 B.4 fascia (b) per la Lista Dipendenti (12 elementi totali — fascia b 6-20)",
+        "Applica il riuso funzionale alla Ricerca rapida dipendente: usata in 3 punti ma stesso oggetto logico → conta 1 sola volta come B.4 fascia (a) (4 campi output + 3 filtri = 7 totali oppure conta solo output = 4 — accetta entrambe le interpretazioni purché motivate)",
+        "Applica ragionamento motivato sui 2 Report PDF organico (stesso tracciato, filtro diverso): sono conteggiabili come 2 C.1 distinti perché filtrando su dimensioni diverse producono output semanticamente distinti, OPPURE come 1 C.1 + 1 D.2 per riuso con filtro diverso — accetta entrambe le interpretazioni purché documentate",
+        "Conta 1 D.2 per la validazione RAL (logica di confronto range min-max)",
+        "Conta 2 B.3 per i dropdown usati nei filtri della lista (Sedi e Reparti) — ma applica riuso: gli stessi B.3 già contati per la scheda form NON si ricontano",
+        "Conta 1 C.1 fascia (b) per la notifica email (destinatario variabile + oggetto variabile + 5 campi corpo = 7 elementi — fascia b 6-20)",
+        "Produce un totale numerico in FFP con le esclusioni e il riuso documentati"
+      ]
+    }
+  ]
+}
