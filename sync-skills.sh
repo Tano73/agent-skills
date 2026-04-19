@@ -67,12 +67,14 @@ dir_sha256() {
     exit 2
   fi
 
-  # Find all regular files, sort by relative path, hash each, then hash the list
+  # Find all regular files, sort by relative path, hash each file's content
+  # only (strip the absolute path from sha output so the combined hash is
+  # path-independent), then hash the full list.
   find "$dir" -type f \
     | sed "s|^${dir}/||" \
     | sort \
     | while IFS= read -r rel; do
-        $sha_cmd "${dir}/${rel}"
+        $sha_cmd "${dir}/${rel}" | awk '{print $1}'
       done \
     | $sha_cmd \
     | awk '{print $1}'
