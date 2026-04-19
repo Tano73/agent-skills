@@ -27,11 +27,12 @@ fi
 # ---------------------------------------------------------------------------
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [status|sync] [-h|--help]
+Usage: $(basename "$0") [status|sync] [--all] [-h|--help]
 
 Commands:
-  status  (default) Show sync state of each skill — exits 1 if any differ.
-  sync              Interactive bidirectional sync, one skill at a time.
+  status       (default) Show sync state of each skill — exits 1 if any differ.
+  sync         Interactive bidirectional sync for REPO_ONLY and DIFFERS skills.
+  sync --all   Also include INSTALL_ONLY skills in the sync session.
 
 Options:
   -h, --help        Print this help and exit.
@@ -208,8 +209,10 @@ cmd_status() {
 
 # ---------------------------------------------------------------------------
 # sync command
+# $1 : "all" to include INSTALL_ONLY skills, empty otherwise
 # ---------------------------------------------------------------------------
 cmd_sync() {
+  local include_install_only="${1:-}"
   mkdir -p "$INSTALL_DIR"
 
   local actions_taken=()
@@ -237,9 +240,12 @@ cmd_sync() {
       state="INSTALL_ONLY"
     fi
 
-    # Skip skills already in sync
+    # Skip IN_SYNC always; skip INSTALL_ONLY unless --all was requested
     if [ "$state" = "IN_SYNC" ]; then
       printf "  ${C_GREEN}✓ IN SYNC       ${C_RESET} %s — skipping\n" "$skill"
+      continue
+    fi
+    if [ "$state" = "INSTALL_ONLY" ] && [ -z "$include_install_only" ]; then
       continue
     fi
 
@@ -296,14 +302,18 @@ cmd_sync() {
 }
 
 # ---------------------------------------------------------------------------
-# Entrypoint
+# Entrypoint — parse [command] [--all] [-h|--help]
 # ---------------------------------------------------------------------------
 CMD="${1:-status}"
+OPT_ALL=""
+for arg in "$@"; do
+  [ "$arg" = "--all" ] && OPT_ALL="all"
+done
 
 case "$CMD" in
   -h|--help)  usage; exit 0 ;;
   status)     cmd_status ;;
-  sync)       cmd_sync ;;
+  sync)       cmd_sync "$OPT_ALL" ;;
   *)
     echo -e "${C_RED}Unknown command: $CMD${C_RESET}" >&2
     usage >&2
