@@ -30,9 +30,28 @@ agent-skills/
 └── README.md
 ```
 
-## Usage
+## Installation
 
-Use `sync-skills.sh` to install or update skills from this repo into your agent environment:
+### End users — via `npx skills`
+
+Install individual skills directly from GitHub:
+
+```bash
+npx skills add https://github.com/Tano73/agent-skills --skill ffpa-analyzer
+npx skills add https://github.com/Tano73/agent-skills --skill markdown-chapter-splitter
+npx skills add https://github.com/Tano73/agent-skills --skill pandoc-convert
+npx skills add https://github.com/Tano73/agent-skills --skill wbs-generator
+```
+
+Update all installed skills:
+
+```bash
+npx skills update
+```
+
+### Contributors — via `sync-skills.sh`
+
+Use `sync-skills.sh` to synchronize skills between your local repo checkout and `~/.agents/skills/` during development:
 
 ```bash
 # Show sync status between repo and ~/.agents/skills/
@@ -43,12 +62,6 @@ Use `sync-skills.sh` to install or update skills from this repo into your agent 
 
 # Also include skills present only in the install dir
 ./sync-skills.sh sync --all
-```
-
-Or install a single skill manually:
-
-```bash
-cp -r skills/ffpa-analyzer ~/.agents/skills/
 ```
 
 ## License
