@@ -325,10 +325,10 @@ calendario con il team descritto. Le fasi critiche (critical path) sono: <lista>
      - `suggestedTag`: `wbs`
    - Attendi il completamento con `checkUploadStatus`
 4. Comunica i percorsi completi dei file su disco e il `uniqueName` del documento caricato su DocMind
-5. Mostra un riepilogo sintetico:
-   - Totale GG/u (senza AI)
-   - Totale GG/u (con AI)
-   - Numero di task totali
-   - Elapsed stimato
-   - Figure professionali necessarie (con codice e costo €/gg)
-   - **Costo totale stimato** (senza AI e con AI, in €)
+5. Mostra un riepilogo sintetico con **esattamente** questi campi (tutti obbligatori):
+   - **Numero di task WBS**: N task (conteggio righe della tabella WBS, escluse header e righe di riepilogo)
+   - **Totale GG/u** (senza AI): X GG/u
+   - **Totale GG/u con AI**: X GG/u
+   - **Elapsed stimato**: X settimane (~Y mesi)
+   - **Figure professionali**: elenco codice + costo €/gg
+   - **Costo totale stimato**: € X (senza AI) / € Y (con AI)
