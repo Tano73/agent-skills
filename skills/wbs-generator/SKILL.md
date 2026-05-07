@@ -87,22 +87,32 @@ Usa lo Scope Snapshot per verificare a posteriori che la WBS generata sia coeren
 
 ### STEP 4 — Identificazione figure professionali
 
-Prima di costruire la WBS, identifica le figure professionali necessarie basandoti sull'analisi
-dei documenti. Per ogni figura definisci:
+Prima di costruire la WBS, leggi il catalogo `references/costi-std.md` per selezionare i codici
+ufficiali delle figure professionali. Ogni codice ha un costo giornaliero standard (€/gg) che verrà
+usato per la stima economica del progetto.
 
-| Figura Professionale | Acronimo | N. Risorse | % Coinvolgimento medio |
-|----------------------|----------|-----------|------------------------|
-| Project Manager      | PM       | 1         | 100%                   |
-| Solution Architect   | SA       | 1         | 60%                    |
-| Senior Developer     | TD4E     | X         | 100%                   |
-| Junior Developer     | TD2F     | X         | 100%                   |
-| DBA                  | DBA      | X         | 40%                    |
-| DevOps Engineer      | DO       | X         | 50%                    |
-| Tester / QA          | QA       | X         | 80%                    |
+Per ogni figura identifica: il ruolo nel progetto, il codice ufficiale dal catalogo, il costo €/gg,
+il numero di risorse e il coinvolgimento medio:
 
-Adatta le figure al profilo reale del progetto: se è un progetto data-intensive aggiungi un Data
-Engineer; se è cloud-native, enfatizza il DevOps; se è un progetto con forte componente UX, aggiungi
-un UX Designer. Motiva ogni scelta in base ai documenti letti.
+| Figura Professionale | Codice | Costo €/gg | N. Risorse | % Coinvolgimento medio |
+|----------------------|--------|-----------|-----------|------------------------|
+| Project Manager      | CO4E   | 552       | 1         | 100%                   |
+| Solution Architect   | TD4E   | 519       | 1         | 60%                    |
+| Senior Developer     | TD3E   | 426       | X         | 100%                   |
+| Developer Mid        | TD2F   | 289       | X         | 100%                   |
+| Cloud / DevOps Eng.  | CL2E   | 354       | X         | 50%                    |
+| Tester / QA          | OP3E   | 415       | X         | 80%                    |
+
+**Come scegliere il codice giusto:**
+- Consulta la sezione "Quick Reference" in `references/costi-std.md` per i ruoli più comuni
+- Per il livello: usa i livelli 3-4 per senior/lead, 2 per mid, 1 per junior
+- Per il grado: E è il più frequente; D per architect/director; F/G per costi più contenuti
+- Se il progetto prevede risorse nearshore, usa NS01 (€180/gg)
+
+Adatta le figure al profilo reale del progetto: se è un progetto data-intensive aggiungi AI3E/AI4E
+(Data Engineer); se è cloud-native, enfatizza CL3E/CL4E (Cloud Engineer); se ha forte componente
+agile, aggiungi AG3E (Scrum Master); se ha requisiti di security, aggiungi CY3E. Motiva ogni scelta
+citando le evidenze trovate nei documenti.
 
 ### STEP 5 — Costruzione della WBS
 
@@ -236,9 +246,9 @@ Il documento deve seguire **esattamente** questa struttura:
 
 ## Figure Professionali
 
-| Figura Professionale | Acronimo | N. Risorse | % Coinvolgimento |
-|----------------------|----------|-----------|-----------------|
-| ...                  | ...      | ...       | ...             |
+| Figura Professionale | Codice | Costo €/gg | N. Risorse | % Coinvolgimento |
+|----------------------|--------|-----------|-----------|-----------------|
+| ...                  | ...    | ...       | ...       | ...             |
 
 ---
 
@@ -258,6 +268,20 @@ Il documento deve seguire **esattamente** questa struttura:
 | 1. PROJECT MANAGEMENT | ... | ... | ...% | ...% |
 | ... | ... | ... | ... | ... |
 | **TOTALE** | **...** | **...** | **...%** | **100%** |
+
+---
+
+## Stima Economica
+
+Calcola il costo totale moltiplicando i **GG/u per figura** × **Costo €/gg** (da `references/costi-std.md`).
+Distribuisci i GG/u totali tra le figure in proporzione al loro coinvolgimento e ai task assegnati.
+
+| Figura Professionale | Codice | Costo €/gg | GG/u Totali | GG/u con AI | Costo Totale (€) | Costo con AI (€) |
+|----------------------|--------|-----------|-------------|-------------|-----------------|-----------------|
+| ...                  | ...    | ...       | ...         | ...         | ...             | ...             |
+| **TOTALE**           |        |           | **...**     | **...**     | **...**         | **...**         |
+
+> **Risparmio stimato con AI: € ... (~...%)**
 
 ---
 
@@ -306,4 +330,5 @@ calendario con il team descritto. Le fasi critiche (critical path) sono: <lista>
    - Totale GG/u (con AI)
    - Numero di task totali
    - Elapsed stimato
-   - Figure professionali necessarie
+   - Figure professionali necessarie (con codice e costo €/gg)
+   - **Costo totale stimato** (senza AI e con AI, in €)
