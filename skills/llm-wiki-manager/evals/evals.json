@@ -1,0 +1,23 @@
+{
+  "skill_name": "llm-wiki-manager",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Ho una directory /tmp/test-wiki-setup vuota. Voglio creare un nuovo wiki personale per documentare tutto quello che imparo su Kubernetes e cloud-native. Inizializzalo lì.",
+      "expected_output": "The skill sets up the full wiki directory structure under /tmp/test-wiki-setup: raw/, raw/assets/, wiki/entities/, wiki/concepts/, wiki/sources/, plus wiki/index.md with empty tables, wiki/log.md with a setup entry, wiki/overview.md with a Kubernetes/cloud-native placeholder, and AGENTS.md. Optionally does git init. Reports what was created.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "Leggi questo documento e aggiungilo al wiki:\n\n# Kubernetes Operators\n\nUn Kubernetes Operator è un pattern software che estende Kubernetes con logica di gestione specifica per un'applicazione. Usa le Custom Resource Definitions (CRD) per rappresentare lo stato desiderato dell'applicazione e un controller loop per riconciliare lo stato attuale con quello desiderato.\n\n## Vantaggi principali\n\n- Automazione di Day-2 operations (backup, failover, upgrade)\n- Codifica dell'expertise operativo in software\n- Self-healing: il controller reagisce automaticamente ai guasti\n\n## Svantaggi\n\n- Complessità di sviluppo: servono Go e Kubebuilder/Operator SDK\n- Debug difficile: il controller loop è asincrono\n- Operator maturity varia molto (livelli 1-5 di OperatorHub)\n\n## Strumenti\n\n- Kubebuilder: framework ufficiale CNCF\n- Operator SDK: alternativa di Red Hat, include supporto Ansible e Helm\n- controller-runtime: libreria Go che implementa il controller loop",
+      "expected_output": "The skill ingests the pasted content about Kubernetes Operators. Creates wiki/sources/<slug>.md with title, summary, key takeaways, and links. Creates or updates wiki/entities/ pages for Kubernetes Operators, Kubebuilder, Operator SDK, controller-runtime. Creates or updates wiki/concepts/ pages for patterns like CRD, controller loop, Day-2 operations, self-healing. Updates wiki/index.md and wiki/log.md. Reports a list of all pages created/modified.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Cosa sai di Kubernetes Operators e come si differenziano da un semplice Deployment? Fornisci un confronto.",
+      "expected_output": "The skill reads wiki/index.md, identifies relevant pages (entities/kubernetes-operators.md, concepts/controller-loop.md, etc.), synthesizes a comparative answer. Format is a Markdown table comparing Operator vs Deployment on dimensions like lifecycle management, automation, complexity, use cases. Includes citations with relative links to wiki pages. Asks if the user wants to save the answer as a wiki page.",
+      "files": []
+    }
+  ]
+}
