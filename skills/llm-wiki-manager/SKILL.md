@@ -61,7 +61,8 @@ The wiki specializes in **software development knowledge**: projects, architectu
 3. **Domain interview**: ask (or infer from context) the key technologies, systems, and architectural patterns of the project. Build a mental domain map: which items are entities (concrete systems/tools) vs. concepts (patterns/principles)?
 4. Create the directory tree: `raw/`, `raw/assets/`, `wiki/entities/`, `wiki/concepts/`, `wiki/sources/`
 5. Create `wiki/log.md`, `wiki/overview.md` (placeholder), and `AGENTS.md`.
-6. **Generate seed pages**: create entity pages for top-level entities and concept pages for top-level concepts identified in step 3.
+5b. **DocMind pre-scan** (only if DocMind MCP tools are available): search for documents related to the entities and concepts identified in step 3. For each relevant document found, run INGEST steps 1–3 right now — fetch the content and create its `wiki/sources/<slug>.md` before any entity page is written. This guarantees that every `sources:` frontmatter reference and `## Sources` link added in subsequent steps points to a file that actually exists on disk. Skip this step entirely if DocMind is not available.
+6. **Generate seed pages**: create entity pages for top-level entities and concept pages for top-level concepts identified in step 3. When adding a `sources:` frontmatter key or a link in `## Sources`, only reference slugs whose `wiki/sources/<slug>.md` was created in step 5b. Never add a source reference for a document that hasn't been ingested yet.
 7. **Concept discovery pass**: scan all generated seed pages for technical terms, patterns, protocols, or tools that are cited in the text but don't yet have a dedicated page. Promote any term that meets at least one of these criteria:
    - Appears in 2 or more seed pages, OR
    - Appears in a `## Key Decisions`, `## Relationships`, or `## Patterns in Use` section
@@ -72,7 +73,7 @@ The wiki specializes in **software development knowledge**: projects, architectu
    - Every term in a page's body that has a corresponding wiki page is an active relative link (no naked mentions of things that have pages)
 9. Create `wiki/index.md` with the final list of all created pages.
 10. Update `wiki/overview.md` with the real knowledge map (actual entity/concept counts and links, not a placeholder).
-11. **Structural check**: verify (a) no page has zero outbound links, (b) no existing page is mentioned as plain text without being linked. Fix any violations before committing.
+11. **Structural check**: verify (a) no page has zero outbound links, (b) no existing page is mentioned as plain text without being linked, (c) every slug in a `sources:` frontmatter field and every link under a `## Sources` section points to an actual `wiki/sources/<slug>.md` file on disk. Fix any violations before committing — if a DocMind source was referenced but not ingested, either ingest it now (create the source page) or remove the dangling reference.
 12. Run: `git init && git add . && git commit -m "chore: initialize llm-wiki"`
 13. Report: list all pages created, note any promoted stubs that need richer content from a future INGEST.
 
@@ -137,6 +138,9 @@ Walk through all wiki pages and produce a prioritized report:
 
 ## 🔴 Contradictions
 [pages with ⚠️ contradiction notices]
+
+## 🔴 Dangling Source References
+[source slugs in `sources:` frontmatter or `## Sources` sections that have no corresponding `wiki/sources/<slug>.md` file on disk — these are broken links that must be resolved by either ingesting the source or removing the reference]
 
 ## 🟠 Orphan Pages
 [pages with no inbound links]
@@ -284,6 +288,7 @@ where `<operation>` is one of: `setup`, `ingest`, `query`, `lint`
 
 ## Quality Standards
 
+- **No dangling source references**: a slug listed in `sources:` frontmatter or linked under `## Sources` must correspond to an existing `wiki/sources/<slug>.md` on disk. When using DocMind during SETUP, always create the source page before any entity page references it. This rule is checked by LINT under 🔴 Dangling Source References.
 - **Link completeness**: every entity page must link to at least 1 entity AND 1 concept that applies to it; every concept page must link to at least 1 entity where it is applied.
 - **No naked mentions**: any technical term cited in a page's body that has a corresponding wiki page must be an active relative link — never plain text.
 - **Promotion threshold**: create a dedicated page for any term that (a) appears in 2+ pages, OR (b) appears in a `## Key Decisions`, `## Relationships`, or `## Patterns in Use` section of any page.
