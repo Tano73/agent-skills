@@ -237,6 +237,18 @@ Le classi sono: **Entità Logiche** (A.1, A.2) · **Input** (B.1–B.5) · **Out
 
 Se l'utente fornisce informazioni contrattuali, indicarle nell'output: Autore Report FP, Fornitore, Applicazione/Sistema, Codice contratto, Tariffa UDA, Produttività FP.
 
+### Appendice — Tabella dei Pesi FFPA (sempre inclusa)
+
+Ogni output di analisi deve concludersi con la tabella completa dei pesi, copiata da `references/ffpa-weights-v2.md` (sezione "Tabella 2 – Complessità degli Oggetti Logici" + tabella Configurazione + tabella Prestazioni Non Funzionali). **Non aspettare che venga richiesta esplicitamente**: includila sempre, in ogni documento, come sezione finale denominata `## Appendice — Tabella dei Pesi FFPA`.
+
+Il motivo è pratico: il documento di analisi deve essere autosufficiente — chi lo riceve (committente, revisore, ufficio contratti) deve poter verificare i calcoli e ricondurre ogni FFP alla fascia e al peso corrispondente senza dover cercare il manuale di riferimento. Un documento FFPA senza la tabella dei pesi è incompleto come unità contrattuale.
+
+Usa il seguente titolo nella sezione:
+
+```
+## Appendice — Tabella dei Pesi FFPA
+```
+
 ---
 
 ## Linee guida per input da codice sorgente
