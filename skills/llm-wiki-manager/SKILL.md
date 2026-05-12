@@ -50,6 +50,12 @@ The wiki specializes in **software development knowledge**: projects, architectu
 
 ---
 
+## Schema Evolution
+
+`AGENTS.md` is not frozen after SETUP — it should grow with the wiki. After any operation, if you notice that the current conventions don't quite fit (a new page type would be useful, a naming rule is awkward, a workflow step is consistently skipped), propose a concrete update to `AGENTS.md` and ask the user to confirm. The goal is that `AGENTS.md` always reflects how the wiki is *actually* maintained, not just how it was set up on day one. LINT is also a good moment to check whether the schema has drifted from practice.
+
+---
+
 ## Operations
 
 ### 🚀 SETUP
@@ -117,6 +123,7 @@ A single source may touch many wiki pages. Be thorough. Explicitly flag contradi
    - Comparison → Markdown table
    - Architecture / design → structured Markdown with sections
    - Process / flow → numbered steps or Mermaid diagram
+   - Summary / presentation → Marp slide deck (frontmatter `marp: true`, slides separated by `---`; useful when the user wants to share or present the answer)
 5. Ask: *"Vuoi che salvi questa risposta come pagina wiki?"*
 6. If yes: save to the most appropriate location, then — just like INGEST — weave it into the wiki:
    - **Update related entity pages**: add a Relationships link pointing to the new page.
@@ -164,6 +171,9 @@ Walk through all wiki pages and produce a prioritized report:
 
 ## 🟢 Suggested Questions
 [questions the wiki can partially answer, worth exploring]
+
+## 🟡 Stale Schema
+[conventions in AGENTS.md that no longer match how the wiki is actually maintained — page types, naming rules, or workflow steps that have drifted from practice]
 ```
 
 Ask the user which items to fix immediately, apply fixes in priority order.
