@@ -35,7 +35,7 @@ The wiki specializes in **software development knowledge**: projects, architectu
 ```
 <wiki-root>/
 ├── AGENTS.md          ← operating manual (this skill's conventions, adapted per wiki)
-├── raw/               ← immutable source documents — NEVER modify
+├── raw/               ← source documents — existing files are immutable, new files added by INGEST
 │   └── assets/        ← images and attachments
 └── wiki/
     ├── index.md        ← full content catalog — update after every operation
@@ -46,7 +46,7 @@ The wiki specializes in **software development knowledge**: projects, architectu
     └── sources/        ← one summary page per ingested document
 ```
 
-**Absolute rule**: never write to files in `raw/`. They are the immutable source of truth.
+**Absolute rule**: never modify or delete existing files in `raw/`. The skill may create new files in `raw/` (e.g. saving a DocMind document during INGEST), but once a file is in `raw/` it is immutable.
 
 ---
 
@@ -69,7 +69,7 @@ The wiki specializes in **software development knowledge**: projects, architectu
 3. **Domain interview**: ask (or infer from context) the key technologies, systems, and architectural patterns of the project. Build a mental domain map: which items are entities (concrete systems/tools) vs. concepts (patterns/principles)?
 4. Create the directory tree: `raw/`, `raw/assets/`, `wiki/entities/`, `wiki/concepts/`, `wiki/sources/`
 5. Create `wiki/log.md`, `wiki/overview.md` (placeholder), and `AGENTS.md`.
-5b. **DocMind pre-scan** (only if DocMind MCP tools are available): search for documents related to the entities and concepts identified in step 3. For each relevant document found, run INGEST steps 1–3 right now — fetch the content and create its `wiki/sources/<slug>.md` before any entity page is written. This guarantees that every `sources:` frontmatter reference and `## Sources` link added in subsequent steps points to a file that actually exists on disk. Skip this step entirely if DocMind is not available.
+5b. **DocMind pre-scan** (only if DocMind MCP tools are available): search for documents related to the entities and concepts identified in step 3. For each relevant document found, perform the mechanical ingest pre-pass only: fetch the content, apply the versioning check, reuse the existing raw file if it is identical or save a new file/version if needed, and create `wiki/sources/<source-slug>.md` with `source_file` pointing to that exact raw file before any entity page is written. **Do not run INGEST step 2's user discussion during SETUP.** The goal here is to ensure source pages already exist before seed entity and concept pages are written. Skip this step entirely if DocMind is not available.
 6. **Generate seed pages**: create entity pages for top-level entities and concept pages for top-level concepts identified in step 3. When adding a `sources:` frontmatter key or a link in `## Sources`, only reference slugs whose `wiki/sources/<slug>.md` was created in step 5b. Never add a source reference for a document that hasn't been ingested yet.
 7. **Concept discovery pass**: scan all generated seed pages for technical terms, patterns, protocols, or tools that are cited in the text but don't yet have a dedicated page. Promote any term that meets at least one of these criteria:
    - Appears in 2 or more seed pages, OR
@@ -93,19 +93,34 @@ The wiki specializes in **software development knowledge**: projects, architectu
 
 **The goal**: extract durable, structured knowledge from a source and weave it into the existing wiki so it's accessible in future sessions without re-reading the original.
 
-1. **Read** the source fully (file from `raw/` or pasted content; or fetch from DocMind if available — see DocMind section).
+1. **Ensure the source is in `raw/`** before proceeding.
+   - If the source is already a file under `raw/` → read it directly.
+   - If the user provides a **local file path outside `raw/`** → stop and propose copying it:
+     > *"Per mantenere la fonte originale immutabile, ti consiglio di copiare il file in `raw/<filename>` prima di procedere. Vuoi che lo faccia io, o preferisci farlo tu?"*
+   - If the user provides a **DocMind uniqueName or search query** → fetch the content via DocMind, derive a candidate filename in `raw/`, and then apply the versioning check below before proceeding (see DocMind Integration section).
+   - If the user **pastes content** → derive a candidate `raw/<slug>.md` filename, confirm it with the user, and then apply the versioning check below before writing anything.
+
+   **Before writing any file to `raw/`**, apply this versioning check:
+   - If no file with that name exists in `raw/` → create it and proceed.
+   - If a file with that name **already exists and is identical** (same content) → notify the user:
+     > *"`raw/<filename>` è già presente e non ha subito modifiche."*
+     - During a **direct INGEST request** whose goal is adding that source to `raw/` → stop. Do not create a duplicate file and do not proceed further.
+     - During **SETUP step 5b** or **QUERY's DocMind auto-ingest flow** → reuse the existing raw file and continue the parent workflow with that file.
+   - If a file with that name **already exists but differs** → ask the user:
+     > *"`raw/<filename>` esiste già ma il contenuto è cambiato. Vuoi salvare questa versione come `raw/<filename-vN>.md`? (es. `raw/documento-v2.md`)"*
+     - If **yes** → save as `raw/<filename-vN>.md` (find the next available version number: v2, v3, …) and proceed with ingest using the new versioned file.
+     - If **no** → stop. Do not overwrite, do not proceed.
 2. **Discuss** with the user:
    - What are the 3–5 key takeaways?
    - Which existing entities and concepts does this source touch?
    - Does anything contradict existing wiki content?
-3. **Create a source summary page** at `wiki/sources/<kebab-slug>.md` using the source page template.
+3. **Create a source summary page** at `wiki/sources/<source-slug>.md` using the source page template. Use the same slug as the raw file chosen in step 1, and set `source_file` to that exact path in `raw/`.
 4. **Update entity pages** (`wiki/entities/<slug>.md`): create if missing, add new info, add backlink to source, flag contradictions.
 5. **Update concept pages** (`wiki/concepts/<slug>.md`): create if missing, add insights or references from this source.
-6. **Check page size — split if needed** (see Page Splitting below): after writing each new or heavily-updated page, if it exceeds ~3 000 characters, evaluate whether it should be split into focused sub-pages along its H2 boundaries. Split only when each resulting sub-page is independently useful for future queries.
-7. **Update `wiki/overview.md`**: revise the synthesis paragraph to include new knowledge.
-8. **Update `wiki/index.md`**: add new rows to the appropriate table sections.
-9. **Append to `wiki/log.md`**: `## [YYYY-MM-DD] ingest | <title> — <one-line learning>`
-10. Report: list all pages created or modified (typically 5–15 per source).
+6. **Update `wiki/overview.md`**: revise the synthesis paragraph to include new knowledge.
+7. **Update `wiki/index.md`**: add new rows to the appropriate table sections.
+8. **Append to `wiki/log.md`**: `## [YYYY-MM-DD] ingest | <title> — <one-line learning>`
+9. Report: list all pages created or modified (typically 5–15 per source).
 
 A single source may touch many wiki pages. Be thorough. Explicitly flag contradictions.
 
@@ -125,10 +140,11 @@ A single source may touch many wiki pages. Be thorough. Explicitly flag contradi
    - Process / flow → numbered steps or Mermaid diagram
    - Summary / presentation → Marp slide deck (frontmatter `marp: true`, slides separated by `---`; useful when the user wants to share or present the answer)
 5. Ask: *"Vuoi che salvi questa risposta come pagina wiki?"*
+   - If the answer used a DocMind document that is not already represented by a `wiki/sources/<slug>.md` page, ask separately: *"Vuoi che registri anche questo documento DocMind come sorgente nel wiki?"*
 6. If yes: save to the most appropriate location, then — just like INGEST — weave it into the wiki:
-   - **Update related entity pages**: add a Relationships link pointing to the new page.
-   - **Update related concept pages**: add cross-references where the connection is obvious (e.g. `dag.md` → `dag-hot-deploy.md`).
-   - **Update `wiki/overview.md`**: mention the new concept in the knowledge map / concept count.
+    - **Update related entity pages**: add a Relationships link pointing to the new page.
+    - **Update related concept pages**: add cross-references where the connection is obvious (e.g. `dag.md` → `dag-hot-deploy.md`).
+    - **Update `wiki/overview.md`**: mention the new concept in the knowledge map / concept count.
    - **Update `wiki/index.md`**: add a row in the Concepts table.
    - **Append to `wiki/log.md`**: `## [YYYY-MM-DD] query | <title> — <one-line learning>`
 
@@ -151,14 +167,14 @@ Walk through all wiki pages and produce a prioritized report:
 ## 🔴 Dangling Source References
 [source slugs in `sources:` frontmatter or `## Sources` sections that have no corresponding `wiki/sources/<slug>.md` file on disk — these are broken links that must be resolved by either ingesting the source or removing the reference]
 
+## 🟠 Missing Provenance
+[source pages in `wiki/sources/` whose `source_file` does not point to an existing file in `raw/` — the original cannot be retrieved]
+
 ## 🟠 Orphan Pages
 [pages with no inbound links]
 
 ## 🟠 Missing Pages
 [entities/concepts mentioned in multiple pages but lacking a dedicated page]
-
-## 🟡 Oversized Pages
-[pages exceeding ~3 000 characters that are candidates for splitting]
 
 ## 🟡 Stale Content
 [pages that likely need updating based on newer sources]
@@ -305,34 +321,11 @@ where `<operation>` is one of: `setup`, `ingest`, `query`, `lint`
 - **No naked mentions**: any technical term cited in a page's body that has a corresponding wiki page must be an active relative link — never plain text.
 - **Promotion threshold**: create a dedicated page for any term that (a) appears in 2+ pages, OR (b) appears in a `## Key Decisions`, `## Relationships`, or `## Patterns in Use` section of any page.
 - `wiki/index.md` must be complete — every page must have an entry.
-- Never write to `raw/` — it is the immutable source of truth.
+- Never modify or delete existing files in `raw/` — they are the immutable source of truth. The skill may create new files in `raw/` during INGEST.
 - Always update `log.md` and `index.md` after any wiki change.
 - Entity pages answer: *What is it? What does it do? How does it relate to other entities?*
 - Concept pages answer: *What is this concept? Why does it matter? Where is it applied?*
 - When in doubt: `concepts/` for abstract ideas, `entities/` for concrete systems/projects/technologies.
-- **Page size target: ≤ 3 000 characters (~750 tokens).** Pages above this threshold should be split (see Page Splitting below).
-
----
-
-## Page Splitting
-
-Split a page when it exceeds ~3 000 characters **and** its H2 sections are independently useful for future queries. Do not split purely to hit the size target if the sections only make sense together.
-
-### How to split
-
-1. Identify the natural split points — typically one H2 section → one new page.
-2. Give each sub-page a descriptive `kebab-case` slug (e.g. `concept-ingest.md`, `concept-query.md`).
-3. Add a **## See Also** section to each sub-page linking the siblings.
-4. Replace the original page with a lightweight **index page** that summarises the topic and links all sub-pages — keep it under 3 000 characters.
-5. Update `wiki/index.md`: remove the old entry, add one entry per sub-page (plus the index page if it carries standalone value).
-6. Update all inbound links across the wiki to point to the most specific sub-page.
-7. Append to `wiki/log.md`: `## [YYYY-MM-DD] split | <original-page> → <N> sub-pages`
-
-### When NOT to split
-
-- The page is a source summary (`wiki/sources/`) — keep sources intact, they represent a single document.
-- The page is `wiki/overview.md` or `wiki/index.md` — these are navigation artifacts, not content pages.
-- All H2 sections are tightly coupled (removing one makes the others incomplete).
 
 ---
 
@@ -346,13 +339,13 @@ INGEST also accepts:
 - A DocMind `uniqueName` → `getFlavorByName(uniqueName)` to fetch the document
 - A search query on a DocMind project → `searchFlavorChunks(project, query, mode=hybrid)`
 
-The retrieved content is treated exactly like a local source file.
+When ingesting from DocMind, derive a candidate `raw/<slug>.md` filename from the DocMind `uniqueName` (converted to kebab-case), then apply the normal versioning check before writing anything. Proceed using the resolved raw file (for example `raw/<slug>.md` if reused or created, or `raw/<slug>-v2.md` if versioned) and set `source_file` in the source page frontmatter to that exact path.
 
 ### Layer 2 — Query with semantic search
 
 In enhanced mode, QUERY uses `searchFlavorChunks(project, question, mode=hybrid)` to identify relevant pages, in addition to or instead of reading `wiki/index.md`.
 
-If a DocMind document from **any** project (not just the primary one) is fetched and substantially contributes to the answer, treat it as an ingested source: create a `wiki/sources/<slug>.md` page for it (using the source page template) and add it to `wiki/index.md`. This prevents dangling `sources:` frontmatter references and keeps the wiki self-consistent.
+If a DocMind document from **any** project (not just the primary one) is fetched and used in the answer, ask the user whether it should also be registered as a source in the wiki. Only if the user agrees, treat it as an ingested source: apply the versioning check, reuse the existing raw file if it is identical or save a new file/version in `raw/` if needed, create a `wiki/sources/<source-slug>.md` page using the same resulting slug, set `source_file` to that exact raw path, and add it to `wiki/index.md`. This keeps source persistence explicit and avoids creating unwanted wiki files automatically.
 
 ### Layer 3 — Mirror to DocMind (advanced)
 
