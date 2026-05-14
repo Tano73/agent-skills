@@ -1,0 +1,42 @@
+{
+  "skill_name": "team-kb",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Cosa dice la specifica ETG riguardo ai requisiti di sicurezza e classificazione dei dati?",
+      "expected_output": "A response that cites specific content from the ETG project (cap09 or similar security chapter) about security requirements and data classification, with inline source citations and a Sources section.",
+      "files": [],
+      "expectations": [
+        "The response contains at least one inline citation with format (Source: ..., line N) or (Source: ..., lines N\u2013M)",
+        "The response includes a Sources section at the end",
+        "The response mentions security-related content (sicurezza, classificazione, security, requisiti non funzionali)",
+        "The response does NOT invent content not present in the retrieved chunks",
+        "The response references the ETG project documents"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "How does the OrderService API handle the order lifecycle? I need to understand the main flows.",
+      "expected_output": "A response grounded in the 'architecture' document describing OrderService REST API and order lifecycle, with citations and a Sources section.",
+      "files": [],
+      "expectations": [
+        "The response contains at least one inline citation with format (Source: ..., line N) or (Source: ..., lines N\u2013M)",
+        "The response includes a Sources section at the end",
+        "The response mentions OrderService or order lifecycle concepts",
+        "The response is anchored to document content, not general knowledge"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Nel progetto OBG-BATCH-FILEGW, come funziona il gateway per i file batch? Dammi i dettagli tecnici.",
+      "expected_output": "A response citing content from the OBG-BATCH-FILEGW project about the file gateway and batch processing, with inline citations and a Sources section.",
+      "files": [],
+      "expectations": [
+        "The response contains at least one inline citation with format (Source: ..., line N) or (Source: ..., lines N\u2013M)",
+        "The response includes a Sources section at the end",
+        "The response references OBG-BATCH-FILEGW project documents",
+        "The response covers technical details about batch file gateway processing"
+      ]
+    }
+  ]
+}

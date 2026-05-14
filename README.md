@@ -13,6 +13,8 @@ Each skill is a self-contained directory containing a `SKILL.md` prompt file, ev
 | [pandoc-convert](./skills/pandoc-convert/) | Converts documents between formats (Markdown, DOCX, PDF, HTML, EPUB, …) using pandoc. |
 | [wbs-generator](./skills/wbs-generator/) | Generates a detailed Work Breakdown Structure (WBS) in Markdown and CSV from ENGenius DESIGN/DEVELOPER documents stored on DocMind. |
 | [llm-wiki-manager](./skills/llm-wiki-manager/) | Manages an LLM-maintained personal knowledge base (llm-wiki) as a growing collection of structured Markdown files. Supports setup, document ingestion, knowledge queries, and wiki health checks. |
+| [skill-security-auditor](./skills/skill-security-auditor/) | Audits skill definitions (`SKILL.md` and bundled scripts) for malicious, deceptive, or dangerous content before installation. Triggers on any safety review request for a skill. |
+| [team-kb](./skills/team-kb/) | Answers questions from the team's knowledge base stored in DocMind. Searches team documentation, project specs, architecture decisions, technical requirements, and API specs. |
 
 ## Repository structure
 
@@ -43,6 +45,8 @@ npx skills add https://github.com/Tano73/agent-skills --skill markdown-chapter-s
 npx skills add https://github.com/Tano73/agent-skills --skill pandoc-convert
 npx skills add https://github.com/Tano73/agent-skills --skill wbs-generator
 npx skills add https://github.com/Tano73/agent-skills --skill llm-wiki-manager
+npx skills add https://github.com/Tano73/agent-skills --skill skill-security-auditor
+npx skills add https://github.com/Tano73/agent-skills --skill team-kb
 ```
 
 Update all installed skills:
