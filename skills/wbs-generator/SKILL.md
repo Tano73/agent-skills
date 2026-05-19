@@ -26,11 +26,19 @@ file Markdown, e fornire all'utente un piano d'azione concreto con stime di effo
 
 ## Parametri richiesti
 
-La skill richiede un parametro. Se non è stato fornito dall'utente, **chiedilo esplicitamente**:
+La skill richiede tre parametri. Quelli non forniti dall'utente **devono essere chiesti esplicitamente**:
 
 1. **PROGETTO_TARGET** — Il nome del progetto DocMind dove risiedono i documenti DESIGN e DEVELOPER
    generati dalla skill ENGenius. Usa `docmind-listProjects` per mostrare i progetti disponibili
    se l'utente non è sicuro.
+
+2. **INCLUDE_PM** (`sì` / `no`) — Se includere la sezione **Project Management & Governance** nella WBS.
+   - `sì`: la sezione viene generata con tutti i task PM (pianificazione, monitoraggio, governance, chiusura)
+   - `no`: la sezione viene omessa interamente; la figura PM non viene inclusa nel team né nelle stime di costo
+
+3. **TESTING_MODE** (`completo` / `supporto`) — Come trattare le attività di test:
+   - `completo`: il test è a carico del team di progetto → genera la sezione **TEST E QUALITY ASSURANCE** completa (test unitari, integrazione, system test, UAT, performance, security)
+   - `supporto`: il collaudo è condotto dal gruppo del cliente → genera solo la sezione **SUPPORTO AL COLLAUDO** con task limitati (preparazione ambienti, supporto tecnico, bug fixing anomalie); la figura QA/Tester è assente o ha coinvolgimento minimo
 
 ---
 
@@ -42,6 +50,11 @@ Esegui questi passi nell'ordine indicato senza saltarne nessuno.
 
 Se PROGETTO_TARGET non è stato fornito, mostra la lista dei progetti con `docmind-listProjects`
 e chiedi all'utente di selezionarne uno.
+
+Chiedi poi, in un'unica domanda, i parametri mancanti tra INCLUDE_PM e TESTING_MODE:
+*"Prima di procedere, ho bisogno di due informazioni:*
+*1. Devo includere la sezione Project Management nella WBS? (sì/no)*
+*2. Il testing è a carico del vostro team (completo) o gestito dal gruppo di collaudo del cliente con solo supporto da parte nostra (supporto)?"*
 
 ### STEP 2 — Recupero documenti da DocMind
 
@@ -114,6 +127,10 @@ Adatta le figure al profilo reale del progetto: se è un progetto data-intensive
 agile, aggiungi AG3E (Scrum Master); se ha requisiti di security, aggiungi CY3E. Motiva ogni scelta
 citando le evidenze trovate nei documenti.
 
+**Regole sui parametri per le figure:**
+- Se **INCLUDE_PM = no**: non includere la figura PM (CO4E o equivalente) nella tabella e nelle stime economiche
+- Se **TESTING_MODE = supporto**: non includere figure QA/Tester (OP3E o equivalente); il bug fixing è assorbito dai developer già in team
+
 ### STEP 5 — Costruzione della WBS
 
 Struttura la WBS come **tabella unica flat** dove ogni riga è un elemento della gerarchia.
@@ -143,14 +160,17 @@ Evita di usare lo stesso codice per tutti i task — questo è sintomo di stime 
 
 #### Struttura tipica WBS per progetti IT (adatta al progetto specifico)
 
-Parti da questo schema e arricchiscilo con le specificità del progetto:
+Parti da questo schema, **applicando le regole sui parametri INCLUDE_PM e TESTING_MODE**:
 
 ```
+[Se INCLUDE_PM = sì]
 1. PROJECT MANAGEMENT & GOVERNANCE
    1.1 Pianificazione e Setup
    1.2 Monitoraggio e Controllo
    1.3 Gestione Stakeholder e Reporting
    1.4 Chiusura progetto
+
+[Se INCLUDE_PM = no: ometti la sezione 1 completamente e rinumera le sezioni successive da 1]
 
 2. ANALISI E REQUISITI
    2.1 Analisi As-Is
@@ -165,10 +185,19 @@ Parti da questo schema e arricchiscilo con le specificità del progetto:
 4-N. SVILUPPO [uno per modulo/componente identificato nel DESIGN]
 
 N+1. INTEGRAZIONE E MIDDLEWARE
+
+[Se TESTING_MODE = completo]
 N+2. TEST E QUALITY ASSURANCE
    X.1 Test unitari e di integrazione
    X.2 System testing / UAT
    X.3 Performance e security testing
+
+[Se TESTING_MODE = supporto]
+N+2. SUPPORTO AL COLLAUDO
+   X.1 Preparazione ambienti e dati di test
+   X.2 Supporto tecnico durante il collaudo
+   X.3 Bug fixing anomalie collaudo
+   X.4 Supporto gestione UAT e sign-off
 
 N+3. DEPLOYMENT E INFRASTRUTTURA
 N+4. MIGRAZIONE DATI (se applicabile)
@@ -176,6 +205,17 @@ N+5. FORMAZIONE E DOCUMENTAZIONE
 N+6. CUTOVER E MESSA IN PRODUZIONE
 N+7. HYPERCARE E SUPPORTO POST GO-LIVE
 ```
+
+**Regole per INCLUDE_PM = no**: non includere task di pianificazione, monitoraggio, governance, reporting.
+Se il progetto prevede un PM esterno o del cliente, aggiungere al massimo una nota nel documento
+("Project Management a carico del cliente — non incluso nella stima").
+
+**Regole per TESTING_MODE = supporto**:
+- La sezione si chiama "SUPPORTO AL COLLAUDO", non "TEST E QA"
+- I task coprono solo l'effort del team di progetto (preparazione, supporto, bug fixing), non l'esecuzione del collaudo
+- La figura QA/Tester è assente dalla tabella Figure Professionali; il bug fixing è in carico agli sviluppatori
+- L'effort totale della sezione è tipicamente il 30-50% rispetto al TESTING_MODE = completo
+- Aggiungi una nota esplicita nel documento: *"Il collaudo funzionale è condotto dal gruppo di collaudo del cliente. Questa sezione copre esclusivamente il supporto tecnico e il bug fixing da parte del team di sviluppo."*
 
 #### Colonne della tabella WBS
 
@@ -212,9 +252,67 @@ se richiede giudizio esperto o negoziazione, la riduzione è minima.
 
 - I task devono essere **atomici**: idealmente 1-5 GG/u ciascuno, mai più di 10
 - Se un task supera 10 GG/u, scomponilo in sotto-task
-- Non sottostimare PM, testing e documentazione — tipicamente 30-40% dell'effort totale
+- Se INCLUDE_PM = sì: PM, testing e documentazione pesano tipicamente 30-40% dell'effort totale
+- Se INCLUDE_PM = no: testing e documentazione pesano tipicamente 20-30% dell'effort totale
+- Se TESTING_MODE = supporto: la sezione collaudo pesa tipicamente 8-15% dell'effort totale (contro 15-25% con TESTING_MODE = completo)
 - Considera buffer di contingenza impliciti nei gradi di complessità (non aggiungere extra)
 - Le risorse assegnate ad ogni task devono essere coerenti con le figure identificate nello STEP 4
+
+### STEP 5b — Verifica matematica dell'elapsed (OBBLIGATORIO)
+
+**Prima di procedere alla stesura del documento**, compila questo checkpoint nella tua risposta intermedia con i valori numerici reali. Non usare valori placeholder — ogni campo deve contenere il numero calcolato.
+
+#### Checkpoint 5b — Calcolo FTE effettivi
+
+Elenca ogni figura con N. risorse e % coinvolgimento (convertita in decimale):
+
+```
+Figura 1: N × dec(%) = X.XX FTE
+Figura 2: N × dec(%) = X.XX FTE
+...
+FTE_effettivi = X.XX  ← somma di tutti i contributi
+```
+
+> ⚠️ ERRORE COMUNE: dimenticare di dividere per FTE nella formula successiva equivale a
+> assumere che UNA SOLA PERSONA esegua tutto il progetto in sequenza, gonfiando l'elapsed
+> di un fattore pari esattamente a FTE_effettivi (×2 con team da 2, ×5 con team da 5, ecc.).
+> Verifica sempre che la divisione per FTE_effettivi sia presente.
+
+#### Checkpoint 5b — Calcolo elapsed
+
+Usa **efficienza_parallelismo = 0.65** (fisso). Applica le formule con i numeri reali:
+
+```
+Elapsed_teorico   = [TOT_GGU] ÷ ([FTE_effettivi] × 5)
+                  = ___ ÷ (___ × 5)
+                  = ___ ÷ ___
+                  = ___ settimane
+
+Elapsed_reale     = Elapsed_teorico ÷ 0.65
+                  = ___ ÷ 0.65
+                  = ___ settimane   ← QUESTO è il valore da inserire nel documento
+
+Elapsed_reale_AI  = [TOT_GGU_AI] ÷ ([FTE_effettivi] × 5) ÷ 0.65
+                  = ___ ÷ ___ ÷ 0.65
+                  = ___ settimane (con AI)
+```
+
+**Esempio corretto** (804 GG/u, team: PM 1×100%, SA 1×60%, Dev 2×100%, TD 3×100%, DO 1×50%, QA 1×80%):
+```
+FTE = 1×1.00 + 1×0.60 + 2×1.00 + 3×1.00 + 1×0.50 + 1×0.80 = 9.90
+Elapsed_teorico = 804 ÷ (9.90 × 5) = 804 ÷ 49.5 = 16.2 sett
+Elapsed_reale   = 16.2 ÷ 0.65 = 24.9 sett ≈ 25 settimane   ✓
+```
+> ❌ Errato: 804 ÷ 5 = 161 sett (×6.5 — ha omesso la divisione per FTE)
+> ❌ Errato: 804 ÷ 5 ÷ 0.65 = 248 sett (×10 — stessa omissione, ancora peggio)
+
+**Regola di sanity check**: se l'elapsed che stai per scrivere nel documento differisce di più del 20%
+da Elapsed_reale calcolato sopra, è **sbagliato** — sostituiscilo con il valore calcolato.
+
+**Per gli scenari team ridotto** (tabella confronto), applica la stessa formula per ogni scenario:
+`Elapsed_scenario = Tot. GG/u ÷ (FTE_scenario × 5) ÷ 0.65`
+
+Non stimare l'elapsed a intuito. Calcola sempre prima, poi usa il numero calcolato nel documento.
 
 ### STEP 6 — Struttura del documento di output
 
@@ -301,9 +399,18 @@ Distribuisci i GG/u totali tra le figure in proporzione al loro coinvolgimento e
 | 1. Project Management | 1-N | M1-MN | — | PM |
 | ... | ... | ... | ... | ... |
 
+### Verifica matematica elapsed
+
+> **Formula**: `Elapsed = Tot. GG/u ÷ (FTE_effettivi × 5) ÷ 0,65`
+>
+> FTE_effettivi = <Figura1>: N×dec% + <Figura2>: N×dec% + ... = **<FTE_tot> FTE**
+>
+> <Tot. GG/u> ÷ (<FTE_tot> × 5) ÷ 0,65 = **~X settimane**
+> <Tot. GG/u con AI> ÷ (<FTE_tot> × 5) ÷ 0,65 = **~Y settimane** (con AI)
+
 ### Stima Elapsed Totale
 
-**Elapsed stimato: X settimane (~Y mesi)**
+**Elapsed stimato: ~X settimane (~Y mesi)** · Con AI: **~W settimane (~Z mesi)**
 
 Considerando le parallelizzazioni identificate, il progetto richiede circa **X settimane** di
 calendario con il team descritto. Le fasi critiche (critical path) sono: <lista>.
