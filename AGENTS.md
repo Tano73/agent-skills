@@ -2,7 +2,7 @@
 
 ## Project overview
 
-This repository contains a collection of **skills for GitHub Copilot coding agents**. Each skill is a self-contained directory that the agent installs and executes to handle specific domains (function point sizing, document conversion, chapter splitting, WBS generation, LLM-maintained wiki management, team knowledge base queries, skill security auditing, etc.).
+This repository contains a collection of **skills for GitHub Copilot coding agents**. Each skill is a self-contained directory that the agent installs and executes to handle specific domains (function point sizing, document conversion, chapter splitting, WBS generation, LLM-maintained wiki management, team knowledge base queries, skill security auditing, AI model cost routing, etc.).
 
 There are no build steps, no compiled artifacts, and no package manager. The repo is composed of Markdown files, JSON evaluation cases, and occasional Python helper scripts.
 
@@ -16,6 +16,7 @@ agent-skills/
 │       ├── evals/
 │       │   └── evals.json    # Evaluation cases (required)
 │       ├── scripts/          # Python or shell helper scripts (optional)
+│       ├── bin/              # CLI executables / control scripts (optional, alternative to scripts/)
 │       └── references/       # Reference data / lookup tables (optional)
 ├── sync-skills.sh            # Sync tool: repo skills/ ↔ ~/.agents/skills/
 ├── AGENTS.md
@@ -45,7 +46,7 @@ Rules for `SKILL.md`:
 - The `name` field must match the directory name exactly (kebab-case).
 - The `description` field is the **trigger text** — the agent reads it to decide whether to invoke the skill. Make it explicit about activation keywords (in any language if the skill is multilingual).
 - Body sections are free-form Markdown. Use `##` for top-level sections inside the skill.
-- Reference any bundled scripts with absolute paths using `$HOME/.agents/skills/<skill-name>/scripts/<file>`.
+- Reference any bundled scripts with absolute paths using `$HOME/.agents/skills/<skill-name>/scripts/<file>` (or `bin/<file>` if the skill uses a `bin/` directory).
 - Reference any bundled data files with relative paths like `references/<file>`.
 
 ## evals/evals.json anatomy

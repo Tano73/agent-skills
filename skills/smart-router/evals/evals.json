@@ -1,0 +1,41 @@
+{
+  "skill_name": "smart-router",
+  "notes": "Expected outputs use abstract TIERS (cheap/balanced/heavy/frontier/code-mid/code-heavy), not concrete slugs. Slug resolution is delegated to models.json so the suite stays valid when the runtime changes.",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Converti questo CSV in JSON:\n\nnome,età,città\nAlice,30,Roma\nBob,25,Milano\nCarla,35,Napoli",
+      "expected_routing": {
+        "tier": "cheap",
+        "overall_range": [1.0, 1.8],
+        "must_trigger_rules": [],
+        "must_not_trigger_rules": ["code-override", "multi-peak", "context-guard"]
+      },
+      "expected_output_summary": "Valid JSON array with all 3 records, fields nome/età/città preserved.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "Scrivi un'analisi approfondita delle implicazioni etiche dell'intelligenza artificiale in sanità, di almeno 1200 parole. Considera: privacy dei dati, bias algoritmico, responsabilità clinica, accesso equo alle cure.",
+      "expected_routing": {
+        "tier": "heavy",
+        "overall_range": [3.0, 4.2],
+        "must_trigger_rules": ["multi-peak"],
+        "must_not_trigger_rules": ["code-override"]
+      },
+      "expected_output_summary": "A substantial Italian essay (≥1200 words) covering all 4 topics with nuanced ethical analysis.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Refactora questa classe Python da sync a async usando asyncio e aiohttp, aggiungendo type hints completi:\n\n```python\nimport requests\nimport time\nfrom typing import List, Dict\n\nclass DataFetcher:\n    def __init__(self, base_url: str):\n        self.base_url = base_url\n        self.session = requests.Session()\n\n    def get_user(self, user_id: int):\n        response = self.session.get(f\"{self.base_url}/users/{user_id}\")\n        return response.json()\n\n    def get_posts(self, user_id: int):\n        response = self.session.get(f\"{self.base_url}/posts?userId={user_id}\")\n        return response.json()\n\n    def fetch_all(self, user_ids: List[int]):\n        results = []\n        for uid in user_ids:\n            user = self.get_user(uid)\n            posts = self.get_posts(uid)\n            results.append({\"user\": user, \"posts\": posts})\n            time.sleep(0.1)\n        return results\n```",
+      "expected_routing": {
+        "tier_one_of": ["code-mid", "code-heavy"],
+        "overall_range": [2.0, 4.0],
+        "must_trigger_rules": ["code-override"]
+      },
+      "expected_output_summary": "Refactored Python class using async def, await, aiohttp.ClientSession, asyncio.gather for parallel fetching, complete type hints, no time.sleep blocking call.",
+      "files": []
+    }
+  ]
+}

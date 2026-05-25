@@ -1,0 +1,154 @@
+{
+  "$schema_version": "2",
+  "description": "Smart-router multi-client model mapping. Each entry under `clients` configures the tier→slug mapping for a specific CLI/IDE runtime (Cursor, Claude Code, Codex CLI, …). `active_client` selects which one is used by the routing workflow. Update this file via `bin/router.py init <client>` rather than by hand.",
+  "active_client": "copilot-cli",
+  "clients": {
+    "cursor": {
+      "configured_at": "2026-05-24T23:39:00Z",
+      "available_slugs": [
+        "claude-4.6-sonnet-medium-thinking",
+        "claude-opus-4-7-thinking-xhigh",
+        "composer-2.5-fast",
+        "gpt-5.3-codex",
+        "gpt-5.5-medium"
+      ],
+      "tiers": {
+        "analyzer": "composer-2.5-fast",
+        "cheap": "composer-2.5-fast",
+        "balanced": "gpt-5.5-medium",
+        "heavy": "claude-4.6-sonnet-medium-thinking",
+        "frontier": "claude-opus-4-7-thinking-xhigh",
+        "code-mid": "gpt-5.3-codex",
+        "code-heavy": "gpt-5.3-codex"
+      },
+      "fallback": "claude-4.6-sonnet-medium-thinking"
+    },
+    "copilot-cli": {
+      "configured_at": "2026-05-24T21:56:04Z",
+      "available_slugs": [
+        "claude-haiku-4.5",
+        "gpt-5-mini",
+        "gpt-5.4-mini",
+        "claude-sonnet-4.5",
+        "claude-sonnet-4.6",
+        "gpt-5.2",
+        "gpt-5.3-codex",
+        "gpt-5.4",
+        "gpt-4.1"
+      ],
+      "tiers": {
+        "analyzer": "claude-haiku-4.5",
+        "cheap": "claude-haiku-4.5",
+        "balanced": "gpt-5.4-mini",
+        "heavy": "claude-sonnet-4.6",
+        "frontier": "gpt-5.4",
+        "code-mid": "gpt-5.3-codex",
+        "code-heavy": "claude-sonnet-4.6"
+      },
+      "fallback": "claude-sonnet-4.6"
+    }
+  },
+  "tier_semantics": {
+    "analyzer": "Modello ECONOMICO usato per la fase 1 di scoring della complessità. Deve essere veloce, capace di seguire un prompt strutturato e produrre JSON valido.",
+    "cheap": "Task triviali: conversioni di formato, fix banali, lookup. Latenza e costo minimi.",
+    "balanced": "Task moderati: scrittura strutturata, refactor leggero, Q&A medio.",
+    "heavy": "Task complessi: ragionamento multi-step, sintesi multi-dominio, scrittura analitica lunga.",
+    "frontier": "Task al limite: novel reasoning, design di sistemi complessi, expertise verticale alta.",
+    "code-mid": "Codice di media complessità ma con pattern non triviali (async, API client, design patterns).",
+    "code-heavy": "Codice complesso: refactor architetturali, sistemi concorrenti, algoritmi non triviali."
+  },
+  "known_clients": {
+    "cursor": {
+      "display_name": "Cursor IDE",
+      "env_markers": [
+        "CURSOR_AGENT",
+        "CURSOR_TRACE_ID",
+        "CURSOR_LAYOUT"
+      ],
+      "default_slugs": [
+        "claude-4.6-sonnet-medium-thinking",
+        "claude-opus-4-7-thinking-xhigh",
+        "composer-2.5-fast",
+        "gpt-5.3-codex",
+        "gpt-5.5-medium"
+      ],
+      "default_tier_mapping": {
+        "analyzer": "composer-2.5-fast",
+        "cheap": "composer-2.5-fast",
+        "balanced": "gpt-5.5-medium",
+        "heavy": "claude-4.6-sonnet-medium-thinking",
+        "frontier": "claude-opus-4-7-thinking-xhigh",
+        "code-mid": "gpt-5.3-codex",
+        "code-heavy": "gpt-5.3-codex"
+      }
+    },
+    "claude-code": {
+      "display_name": "Claude Code CLI",
+      "env_markers": [
+        "CLAUDECODE",
+        "CLAUDE_CODE"
+      ],
+      "default_slugs": [
+        "claude-haiku-4-5",
+        "claude-sonnet-4-5",
+        "claude-opus-4-1"
+      ],
+      "default_tier_mapping": {
+        "analyzer": "claude-haiku-4-5",
+        "cheap": "claude-haiku-4-5",
+        "balanced": "claude-haiku-4-5",
+        "heavy": "claude-sonnet-4-5",
+        "frontier": "claude-opus-4-1",
+        "code-mid": "claude-sonnet-4-5",
+        "code-heavy": "claude-opus-4-1"
+      }
+    },
+    "codex-cli": {
+      "display_name": "OpenAI Codex CLI",
+      "env_markers": [
+        "CODEX_CLI",
+        "OPENAI_CODEX"
+      ],
+      "default_slugs": [
+        "gpt-5-mini",
+        "gpt-5",
+        "gpt-5-codex"
+      ],
+      "default_tier_mapping": {
+        "analyzer": "gpt-5-mini",
+        "cheap": "gpt-5-mini",
+        "balanced": "gpt-5-mini",
+        "heavy": "gpt-5",
+        "frontier": "gpt-5",
+        "code-mid": "gpt-5-codex",
+        "code-heavy": "gpt-5-codex"
+      }
+    },
+    "opencode": {
+      "display_name": "OpenCode CLI",
+      "env_markers": [
+        "OPENCODE"
+      ],
+      "path_markers": [
+        ".opencode/bin"
+      ],
+      "default_slugs": [],
+      "default_tier_mapping": {}
+    },
+    "aider": {
+      "display_name": "Aider",
+      "env_markers": [
+        "AIDER_MODEL",
+        "AIDER_EDITOR_MODEL"
+      ],
+      "default_slugs": [],
+      "default_tier_mapping": {}
+    },
+    "generic": {
+      "display_name": "Generic / unknown",
+      "env_markers": [],
+      "default_slugs": [],
+      "default_tier_mapping": {}
+    }
+  }
+}
