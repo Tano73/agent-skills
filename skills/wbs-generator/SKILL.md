@@ -418,6 +418,39 @@ calendario con il team descritto. Le fasi critiche (critical path) sono: <lista>
 
 ---
 
+### STEP 6b — Validazione sintattica del CSV (OBBLIGATORIO — ciclo ripetuto fino al successo)
+
+Dopo aver salvato il file CSV su disco, eseguine la validazione con lo script dedicato:
+
+```bash
+python3 $HOME/.agents/skills/wbs-generator/scripts/validate_wbs_csv.py <percorso_file_csv>
+```
+
+**Ciclo di validazione (ripeti fino a exit code 0):**
+
+1. Esegui il comando sopra sul file CSV appena salvato.
+2. Se **exit code 0** → il CSV è valido, procedi allo STEP 7.
+3. Se **exit code 1** → leggi l'elenco degli errori e correggi **ogni** errore nel file CSV:
+
+   | Tipo di errore segnalato | Azione correttiva |
+   |--------------------------|-------------------|
+   | Numero di colonne errato | Aggiungi o rimuovi il separatore `;` mancante/in eccesso nella riga indicata |
+   | `Grado Complessità` non valido | Sostituisci con uno dei codici ammessi: `AA`, `A`, `MM`, `M`, `BB`, `B` |
+   | `Numero Macro-funzioni` non intero o < 1 | Correggi con un intero ≥ 1 |
+   | `Tot. GG/u` o `Tot. GG/u con AI` non numerico o ≤ 0 | Inserisci il valore numerico corretto (usa `.` come separatore decimale) |
+   | `Tot. GG/u con AI` > `Tot. GG/u` | Riduci `Tot. GG/u con AI` applicando la riduzione AI appropriata |
+   | `% Incidenza AI` contiene il simbolo `%` | Rimuovi il simbolo `%`, lascia solo il numero intero (es. `29`, non `29%`) |
+   | `% Incidenza AI` non coerente con la formula | Ricalcola: `round((Tot. GG/u − Tot. GG/u con AI) / Tot. GG/u × 100)` e sostituisci |
+   | `Tot. GG/u` non coerente con `GG/u_base × Macro-funzioni` | Correggi `Tot. GG/u` usando esattamente `GG/u_base(codice) × Numero Macro-funzioni` |
+   | Campo testo obbligatorio vuoto | Compila il campo mancante (MACRO ATTIVITA, ATTIVITA, TASK PROGETTUALI o Risorse) |
+
+4. Sovrascrivi il file CSV con la versione corretta.
+5. Torna al punto 1 e ri-esegui lo script.
+
+> ⚠️ Non procedere allo STEP 7 finché lo script non restituisce exit code 0 e il messaggio `✅ CSV valido`.
+
+---
+
 ### STEP 7 — Salvataggio, upload e riepilogo
 
 1. Salva il file `.md` su disco
