@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
-Smart-router control CLI.
+Smart-router configuration CLI.
 
-Manages session state (enable/disable) and the multi-client tier→slug mapping
-in models.json. Designed to be invoked both interactively by humans and
-non-interactively by the SKILL.md workflow.
+Manages the multi-client tier→slug mapping in models.json. The skill itself is
+invoked explicitly by the user (there is no session enable/disable state); this
+CLI only configures and inspects the model mapping. Designed to be invoked both
+interactively by humans and non-interactively by the SKILL.md workflow.
 
 Sub-commands:
-    enable                    Enable session routing.
-    disable                   Disable session routing.
-    status                    Print state + active client + tier mapping.
+    status                    Print active client + tier mapping.
     detect                    Detect the current CLI client from environment.
     init [--client X] [-y]    Interactive (or scripted) wizard to configure a
                               client's tier→slug mapping.
@@ -18,7 +17,6 @@ Sub-commands:
     reset [--client X] [-y]   Remove a client's configuration.
     list-clients              List configured clients and known templates.
 
-State file: ~/.smart-router.state (literal "enabled" or "disabled")
 Config file: <skill_dir>/models.json (schema v2, multi-client)
 
 Designed to depend only on the Python stdlib.
@@ -33,7 +31,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-STATE_FILE = Path.home() / ".smart-router.state"
 SKILL_DIR = Path(__file__).resolve().parent.parent
 MODELS_PATH = SKILL_DIR / "models.json"
 
@@ -54,22 +51,6 @@ CURRENT_SCHEMA = "2"
 # ---------------------------------------------------------------------------
 # Filesystem helpers
 # ---------------------------------------------------------------------------
-
-def read_state() -> str:
-    """Return 'enabled' / 'disabled' / 'corrupt' / 'missing'."""
-    if not STATE_FILE.exists():
-        return "missing"
-    raw = STATE_FILE.read_text(encoding="utf-8").strip().lower()
-    if raw in ("enabled", "disabled"):
-        return raw
-    return "corrupt"
-
-
-def write_state(value: str) -> None:
-    if value not in ("enabled", "disabled"):
-        raise ValueError(f"invalid state {value!r}")
-    STATE_FILE.write_text(value + "\n", encoding="utf-8")
-
 
 def load_models() -> dict[str, Any]:
     if not MODELS_PATH.exists():
@@ -149,29 +130,8 @@ def detect_client(known: dict[str, Any]) -> tuple[str | None, str]:
 # Sub-command implementations
 # ---------------------------------------------------------------------------
 
-def cmd_enable(_args: argparse.Namespace) -> int:
-    write_state("enabled")
-    print("✅ Smart Router abilitato per questa sessione.")
-    print("   Ogni task verrà analizzato e instradato automaticamente al modello più adatto.")
-    return 0
-
-
-def cmd_disable(_args: argparse.Namespace) -> int:
-    write_state("disabled")
-    print("⏸️  Smart Router disabilitato.")
-    print("   I task verranno eseguiti con il modello di default.")
-    return 0
-
-
 def cmd_status(_args: argparse.Namespace) -> int:
-    state = read_state()
-    label = {
-        "enabled":  "🔍 Smart Router: ATTIVO",
-        "disabled": "🔍 Smart Router: DISATTIVO",
-        "missing":  "🔍 Smart Router: DISATTIVO (state file assente)",
-        "corrupt":  "⚠️  Smart Router: STATO CORROTTO (verrà trattato come DISATTIVO)",
-    }[state]
-    print(label)
+    print("🔍 Smart Router: invocazione esplicita (nessuno stato di sessione)")
 
     data = load_models()
     active = data.get("active_client")
@@ -278,9 +238,7 @@ def cmd_list_clients(_args: argparse.Namespace) -> int:
 
 def cmd_help(_args: argparse.Namespace) -> int:
     rows = [
-        ("enable / attiva / abilita / on", "bin/router.py enable", "Turn on session routing"),
-        ("disable / disattiva / disabilita / off", "bin/router.py disable", "Turn off session routing"),
-        ("status / stato", "bin/router.py status", "Show state, active client, and tier mapping"),
+        ("status / stato", "bin/router.py status", "Show active client and tier mapping"),
         ("detect / rileva", "bin/router.py detect", "Detect the current CLI client"),
         ("init / inizializza / setup / configura", "bin/router.py init [--client X]", "Configure a client's tier-to-slug mapping"),
         ("show / mostra", "bin/router.py show [--client X]", "Print the client's mapping"),
@@ -428,9 +386,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="router", description="Smart-router control CLI")
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    sub.add_parser("enable",  help="Enable session routing")
-    sub.add_parser("disable", help="Disable session routing")
-    sub.add_parser("status",  help="Show state + active client + mapping")
+    sub.add_parser("status",  help="Show active client + mapping")
     sub.add_parser("detect",  help="Detect current CLI client from environment")
     sub.add_parser("list-clients", help="List configured and known clients")
     sub.add_parser("help", aliases=["?"], help="Show all available commands")
@@ -454,8 +410,6 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 HANDLERS = {
-    "enable":       cmd_enable,
-    "disable":      cmd_disable,
     "status":       cmd_status,
     "detect":       cmd_detect,
     "show":         cmd_show,

@@ -1,7 +1,7 @@
 {
   "$schema_version": "2",
   "description": "Smart-router multi-client model mapping. Each entry under `clients` configures the tier→slug mapping for a specific CLI/IDE runtime (Cursor, Claude Code, Codex CLI, …). `active_client` selects which one is used by the routing workflow. Update this file via `bin/router.py init <client>` rather than by hand.",
-  "active_client": "copilot-cli",
+  "active_client": "copilot",
   "clients": {
     "cursor": {
       "configured_at": "2026-05-24T23:39:00Z",
@@ -23,8 +23,8 @@
       },
       "fallback": "claude-4.6-sonnet-medium-thinking"
     },
-    "copilot-cli": {
-      "configured_at": "2026-05-24T21:56:04Z",
+    "copilot": {
+      "configured_at": "2026-06-03T07:35:21Z",
       "available_slugs": [
         "claude-haiku-4.5",
         "gpt-5-mini",
@@ -58,6 +58,36 @@
     "code-heavy": "Codice complesso: refactor architetturali, sistemi concorrenti, algoritmi non triviali."
   },
   "known_clients": {
+    "copilot": {
+      "display_name": "GitHub Copilot CLI",
+      "env_markers": [
+        "COPILOT_MODEL",
+        "COPILOT_ALLOW_ALL",
+        "COPILOT_GITHUB_TOKEN",
+        "COPILOT_HOME",
+        "AI_AGENT"
+      ],
+      "default_slugs": [
+        "claude-haiku-4.5",
+        "gpt-5-mini",
+        "gpt-5.4-mini",
+        "claude-sonnet-4.5",
+        "claude-sonnet-4.6",
+        "gpt-5.2",
+        "gpt-5.3-codex",
+        "gpt-5.4",
+        "gpt-4.1"
+      ],
+      "default_tier_mapping": {
+        "analyzer": "claude-haiku-4.5",
+        "cheap": "claude-haiku-4.5",
+        "balanced": "gpt-5.4-mini",
+        "heavy": "claude-sonnet-4.6",
+        "frontier": "gpt-5.4",
+        "code-mid": "gpt-5.3-codex",
+        "code-heavy": "claude-sonnet-4.6"
+      }
+    },
     "cursor": {
       "display_name": "Cursor IDE",
       "env_markers": [

@@ -1,6 +1,6 @@
 ---
 name: smart-router
-description: Routes tasks to the most cost-effective model by first scoring complexity with a cheap analyzer model, then executing with the best-fit tier. ALWAYS trigger this skill when the user invokes a router verb — "attiva smart router", "abilita routing", "disattiva routing", "stato router", "smart router on/off/status/init/show/use/reset", "configura smart router", "inizializza router" — or any variant asking to enable/disable/configure automatic routing. Also trigger when the user says "route this", "smart execute", "usa il modello giusto", "ottimizza il costo", "scegli tu il modello". When session routing is ENABLED (check state file ~/.smart-router.state), intercept ALL user tasks automatically — even if the user did not explicitly ask for routing — and route them through this skill before executing.
+description: Routes a task to the most cost-effective model by first scoring its complexity with a cheap analyzer model, then executing with the best-fit tier. Trigger this skill ONLY when the user explicitly invokes it in the prompt with an unambiguous routing phrase. Italian triggers — "smart router", "usa lo smart router", "instrada con lo smart router", "scegli tu il modello", "scegli il modello giusto", "ottimizza il costo del modello", "esegui con lo smart router". English triggers — "smart router", "use the smart router", "route this with the smart router", "smart execute", "pick the right model", "use the best model", "optimize the model cost". Also handles router configuration verbs (init / show / use / reset / detect / status / list-clients / help). Do NOT trigger on the bare words "route"/"routing"/"instrada" used in their networking or web-framework sense (e.g. "add a route", "fix the routing table"). This skill does NOT auto-intercept tasks and has no enable/disable session state: the user must invoke it explicitly every time.
 ---
 
 # Smart Router
@@ -18,7 +18,7 @@ Running every task on the most powerful model wastes money and time. Running eve
 ├── SKILL.md                  ← this file (the workflow)
 ├── models.json               ← multi-client tier→slug mapping (schema v2)
 ├── bin/
-│   └── router.py             ← control CLI (verbs: enable/disable/status/init/…)
+│   └── router.py             ← config CLI (verbs: init/show/use/reset/status/…)
 └── evals/
     ├── evals.json            ← test prompts + expected routing
     └── scripts/
@@ -27,15 +27,24 @@ Running every task on the most powerful model wastes money and time. Running eve
 
 The skill's runtime model selection is **runtime-agnostic**: it operates on abstract *tiers* (`cheap`, `balanced`, `heavy`, `frontier`, `code-mid`, `code-heavy`, `analyzer`). Tier → real slug resolution is delegated to `models.json`, organized **per client** (Cursor, Claude Code, Codex CLI, …). The same skill installation can therefore be shared across multiple CLI clients.
 
-## Router commands (verbs)
+## How the user invokes this skill
 
-The user can invoke router commands by name. Each verb maps 1:1 to a sub-command of `bin/router.py`. When the user says any of the trigger phrases below, run the corresponding command and surface its output to the user.
+This skill has **no session toggle**. It runs only when the user explicitly invokes it in the prompt — either to **route a task** (e.g. "usa lo smart router per…", "route this with the smart router", "scegli tu il modello per…") or to **manage the model configuration** via one of the verbs below. There is no "always on" mode and no `~/.smart-router.state` file: each routing request must be explicit. Do not self-trigger on the bare words "route"/"routing"/"instrada" when they refer to networking or web routes.
+
+## Router configuration commands (verbs)
+
+The user can manage the tier→slug configuration by name. Each verb maps 1:1 to a sub-command of `router.py`. When the user says any of the trigger phrases below, run the corresponding command and surface its output to the user.
+
+> **Path convention**: the agent's working directory is usually the user's project, **not** the skill folder. Always invoke the scripts with their full path:
+>
+> - `python3 ~/.agents/skills/smart-router/bin/router.py <verb>`
+> - `python3 ~/.agents/skills/smart-router/evals/scripts/route.py <args>`
+>
+> The short `bin/router.py` / `evals/scripts/route.py` forms used below are shorthand for these full paths.
 
 | Verb (it/en)                                  | CLI sub-command                             | What it does                                                  |
 |-----------------------------------------------|---------------------------------------------|---------------------------------------------------------------|
-| `attiva` / `abilita` / `enable` / `on`        | `bin/router.py enable`                      | Turn on session routing                                       |
-| `disattiva` / `disabilita` / `disable` / `off`| `bin/router.py disable`                     | Turn off session routing                                      |
-| `stato` / `status`                            | `bin/router.py status`                      | Show state + active client + tier mapping                     |
+| `stato` / `status`                            | `bin/router.py status`                      | Show active client + tier mapping                             |
 | `rileva` / `detect`                           | `bin/router.py detect`                      | Detect which CLI client is currently running                  |
 | `inizializza` / `init` / `setup` / `configura`| `bin/router.py init [--client X]`           | Interactive wizard: configure tier→slug mapping for a client  |
 | `mostra` / `show`                             | `bin/router.py show [--client X]`           | Print the client's current mapping                            |
@@ -60,40 +69,23 @@ For non-interactive use (e.g. CI or scripted setup), pass `-y` to accept all def
 **Examples**:
 
 ```bash
-bin/router.py init
+python3 ~/.agents/skills/smart-router/bin/router.py init
 
-bin/router.py init --client claude-code -y
+python3 ~/.agents/skills/smart-router/bin/router.py init --client claude-code -y
 
-bin/router.py init --client generic --slugs "model-a,model-b" -y
+python3 ~/.agents/skills/smart-router/bin/router.py init --client generic --slugs "model-a,model-b" -y
 ```
 
-## Session State (Toggle)
+## When to run the routing workflow
 
-The skill is enabled or disabled session-wide via `~/.smart-router.state` (literal text `enabled` or `disabled`). Manage it through `bin/router.py enable|disable|status`. The Python script is the source of truth — do not write the file by hand from the agent. Status distinguishes four cases: `enabled`, `disabled`, `missing` (treated as disabled), `corrupt` (treated as disabled with a warning).
-
-### Checking state before every task
-
-**At the start of every invocation** (even when the user didn't explicitly ask for routing), check the state:
-
-```bash
-bin/router.py status >/dev/null && state=$(cat ~/.smart-router.state 2>/dev/null | tr -d '[:space:]')
-case "${state:-disabled}" in
-  enabled)  do_routing="yes" ;;
-  *)        do_routing="no"  ;;   # disabled, missing, or corrupt → safe default
-esac
-```
-
-- If `enabled`: proceed with the full routing workflow below for the current task.
-- If `disabled`: only run the routing workflow if the user explicitly asked for it (e.g. "route this", "smart execute").
-
-When routing is enabled, **every task the user asks goes through the router**, even simple ones like "rename this variable".
+Run the workflow below **only for the task the user explicitly asked to route**. There is no session state and no auto-interception: if the user did not invoke a routing trigger (see the skill description), do not route — just answer normally. When the user does invoke it, route the single task they provided.
 
 ## Workflow
 
 ### Step 0 — Resolve the active client
 
 ```bash
-bin/router.py show          # prints the active client's mapping
+python3 ~/.agents/skills/smart-router/bin/router.py show   # prints the active client's mapping
 ```
 
 If no client is configured (fresh install), prompt the user to run `init` and stop. Do not invent slugs.
@@ -195,21 +187,28 @@ The analyzer subagent should return pure JSON, but sometimes it wraps the output
 You can also pipe the analyzer's raw output into the offline validator:
 
 ```bash
-echo "$ANALYZER_OUTPUT" | python3 evals/scripts/route.py --eval 1
+echo "$ANALYZER_OUTPUT" | python3 ~/.agents/skills/smart-router/evals/scripts/route.py --eval 1
 ```
 
 ### Step 2 — Select the tier
 
-Apply the rules **in this order** (first match wins). All ranges are semi-open: `[a, b)`.
+Evaluation order (this matches `evals/scripts/route.py` exactly):
 
-#### Rule A — Code-override (global)
+1. **Rule A — Code-override**: if it fires, return immediately.
+2. **Rule B — Multi-peak override**: else, if it fires, return immediately.
+3. **Rule D — Base table**: else, pick the base tier from `overall`.
+4. **Rule C — Context-size guard**: finally, apply this *post-adjustment* to the base-table result.
+
+So A and B are early-exit overrides (first match wins); C is **not** an early-exit rule — it only nudges the base-table outcome. All ranges are semi-open: `[a, b)`.
+
+#### Rule A — Code-override (global, early exit)
 
 Applies regardless of `overall`:
 
 - `code >= 4` AND `overall >= 3.5` → **`code-heavy`**
 - `code >= 4` AND `overall <  3.5` → **`code-mid`**
 
-#### Rule B — Multi-peak override
+#### Rule B — Multi-peak override (early exit)
 
 Applies when ≥3 of the 6 dimensions are `>= 4`:
 
@@ -217,11 +216,9 @@ Applies when ≥3 of the 6 dimensions are `>= 4`:
 
 > Rationale: the weighted-overall formula can under-rate tasks where several non-code dimensions are high but one or two are very low (e.g. a long analytical essay scores `code=1` which drags the mean down). The multi-peak override fixes this.
 
-#### Rule C — Context-size guard
-
-- `context_size == 5` → at minimum **`balanced`** (never `cheap`).
-
 #### Rule D — Base table by `overall`
+
+Reached only when neither A nor B fired:
 
 | `overall`        | Tier        |
 |------------------|-------------|
@@ -230,21 +227,33 @@ Applies when ≥3 of the 6 dimensions are `>= 4`:
 | `[3.0, 4.2)`     | `heavy`     |
 | `[4.2, 5.0]`     | `frontier`  |
 
+#### Rule C — Context-size guard (post-adjustment, defensive)
+
+Applied **after** the base table, never as an early exit:
+
+- if `context_size == 5` AND the base tier is `cheap` → escalate to **`balanced`**.
+
+> **Note**: with the current weighted formula, `context_size == 5` alone forces `overall ≥ 1.857`, which already maps to `balanced` (or higher). So this guard is **defensive** — it documents the invariant "never `cheap` for a huge context" and protects against future formula/threshold changes, but in practice it does not fire. If you lower the `cheap` threshold or change the formula, re-check this rule.
+
 ### Step 3 — Resolve tier → slug and announce
 
-1. Read the active client's tier mapping from `models.json` (via `bin/router.py show` or by parsing the JSON directly).
+1. Read the active client's tier mapping from `models.json` (via `python3 ~/.agents/skills/smart-router/bin/router.py show` or by parsing the JSON directly).
 2. Resolve the chosen tier to a concrete slug.
 3. Show the user a one-line summary (skip if `overall <= 1.5` and tier `cheap` — silent fast path):
 
 ```text
-🔍 Complexity: 3.2/5 (dominant: code, reasoning) → tier code-mid → gpt-5.3-codex  [client: cursor]
+🔍 Complexity: 3.2/5 (dominant: code, reasoning) → tier code-mid → gpt-5.3-codex  [client: copilot]
 ```
 
 ### Step 4 — Execute with the selected model
 
-Spawn a second subagent using `model: "<resolved-slug>"` with the original task as the prompt. Pass along all files, attachments, and context the user provided.
+Spawn a second subagent pinned to the resolved slug, with the original task as the prompt. Pass along all files, attachments, and context the user provided. How you pin the model depends on the runtime:
 
-Save outputs where appropriate (files to current directory, or wherever the user expects them).
+- **Cursor**: use the `Task` tool with `model: "<resolved-slug>"`.
+- **GitHub Copilot CLI**: launch the subagent with the model forced, e.g. `copilot --model <resolved-slug> -p "<task>"` (or set `COPILOT_MODEL=<resolved-slug>` for that invocation).
+- **Other clients**: use the client's native "spawn subagent / sub-task with a chosen model" mechanism.
+
+The same applies to the **Step 1** analyzer subagent (pin it to `tiers.analyzer`). Save outputs where appropriate (files to the current directory, or wherever the user expects them).
 
 ## Edge cases
 
@@ -255,10 +264,9 @@ Save outputs where appropriate (files to current directory, or wherever the user
   2. If it still fails, fall back to the active client's `fallback` slug.
   3. Inform the user: `⚠️ Routing analysis failed; falling back to <slug>.`
 - **Very long context (`context_size == 5`)**: see rule **C** above — never use `cheap` for a 5.
-- **User asks to toggle AND run a task in the same message** (e.g. "attiva il router e poi scrivi..."): handle the toggle first, confirm it, then immediately apply routing to the task in the same turn.
-- **State file missing or corrupt**: treat as `disabled` and inform the user they can enable with "attiva smart router".
-- **No client configured / `models.json` missing**: prompt the user to run `bin/router.py init` and stop. Do not guess slugs.
-- **User runs the skill from a different CLI than configured**: `status` shows the active client. Suggest `bin/router.py detect` and `use` to switch.
+- **No client configured / `models.json` missing**: prompt the user to run `python3 ~/.agents/skills/smart-router/bin/router.py init` and stop. Do not guess slugs.
+- **User runs the skill from a different CLI than configured**: `status` shows the active client. Suggest `python3 ~/.agents/skills/smart-router/bin/router.py detect` and `use` to switch.
+- **Legacy state file**: earlier versions wrote `~/.smart-router.state` for a session toggle. That mechanism is gone; the file (if present) is ignored and can be safely deleted.
 
 ## Example routing decisions (fully ricalcolabili)
 
@@ -278,14 +286,14 @@ Save outputs where appropriate (files to current directory, or wherever the user
 `evals/` contains test prompts. To validate the skill end-to-end:
 
 1. For each eval, run the **Step 1** analyzer subagent and capture the JSON.
-2. Pipe it into the validator: `python3 evals/scripts/route.py --eval <id>`
+2. Pipe it into the validator: `python3 ~/.agents/skills/smart-router/evals/scripts/route.py --eval <id>`
 3. Compare against `expected_routing` in `evals/evals.json`.
 4. (Optional) Run **Step 4** on the resolved slug and inspect the output.
 
 Quick selfcheck of the routing table:
 
 ```bash
-python3 evals/scripts/route.py --selfcheck
+python3 ~/.agents/skills/smart-router/evals/scripts/route.py --selfcheck
 ```
 
 When you change the formula or the routing table, rerun the suite and update the expected outcomes if they drift.

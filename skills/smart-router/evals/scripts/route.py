@@ -140,6 +140,14 @@ def selfcheck() -> int:
         ("ethics-essay",       {"reasoning":4,"code":1,"creativity":4,"context_size":3,"domain_expertise":4,"ambiguity":2}, "heavy",      ["multi-peak"]),
         ("distributed-cache",  {"reasoning":5,"code":5,"creativity":3,"context_size":3,"domain_expertise":4,"ambiguity":3}, "code-heavy", ["code-override"]),
         ("borges-story",       {"reasoning":4,"code":1,"creativity":5,"context_size":4,"domain_expertise":3,"ambiguity":3}, "heavy",      ["multi-peak"]),
+        # context_size==5 must never resolve to 'cheap'. The weighted formula already
+        # guarantees overall>=1.857 (=> balanced) here, so 'context-guard' stays dormant.
+        ("huge-ctx-trivial",   {"reasoning":1,"code":1,"creativity":1,"context_size":5,"domain_expertise":1,"ambiguity":1}, "balanced",   []),
+        # Base-table boundaries (semi-open intervals). overall = (sum + 0.5*max + 0.5*2nd)/7.
+        ("base-cheap-top",     {"reasoning":2,"code":1,"creativity":1,"context_size":1,"domain_expertise":1,"ambiguity":1}, "cheap",      []),   # overall about 1.21
+        ("base-balanced-low",  {"reasoning":2,"code":2,"creativity":2,"context_size":2,"domain_expertise":2,"ambiguity":2}, "balanced",   []),   # overall about 2.00
+        ("base-heavy-low",     {"reasoning":3,"code":3,"creativity":3,"context_size":3,"domain_expertise":3,"ambiguity":3}, "heavy",      []),   # overall about 3.00
+        ("multipeak-frontier", {"reasoning":5,"code":1,"creativity":5,"context_size":5,"domain_expertise":5,"ambiguity":3}, "frontier",   ["multi-peak"]),  # overall about 4.14
     ]
     ok = 0
     for name, scores, exp_tier, exp_rules in cases:
@@ -155,12 +163,22 @@ def selfcheck() -> int:
 
 
 def _load_scores(args: argparse.Namespace) -> tuple[dict[str, int], float | None]:
-    """Return (scores, overall_provided_or_None) from CLI args."""
+    """Return (scores, overall_provided_or_None) from CLI args.
+
+    Accepts both the analyzer envelope ({"scores": {...}, "overall": ...}) and a
+    flat scores object ({"reasoning": ..., ...}). Raises ValueError on bad input.
+    """
     if args.scores:
         return json.loads(args.scores), None
     raw = Path(args.analyzer).read_text(encoding="utf-8") if args.analyzer else sys.stdin.read()
     parsed = extract_json(raw)
-    return parsed["scores"], parsed.get("overall")
+    scores = parsed.get("scores")
+    if scores is None:
+        # Tolerate a flat object that already contains the dimension keys.
+        if all(d in parsed for d in DIMENSIONS):
+            return parsed, None
+        raise ValueError("analyzer JSON is missing the 'scores' object")
+    return scores, parsed.get("overall")
 
 
 def _validate_scores(scores: dict[str, Any]) -> str | None:
@@ -202,7 +220,11 @@ def main() -> int:
     if args.selfcheck:
         return selfcheck()
 
-    scores, overall_provided = _load_scores(args)
+    try:
+        scores, overall_provided = _load_scores(args)
+    except ValueError as exc:  # json.JSONDecodeError is a subclass of ValueError
+        print(f"ERROR: could not parse analyzer output: {exc}", file=sys.stderr)
+        return 2
     err = _validate_scores(scores)
     if err:
         print(f"ERROR: {err}", file=sys.stderr)
