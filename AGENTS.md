@@ -2,7 +2,7 @@
 
 ## Project overview
 
-This repository contains a collection of **skills for GitHub Copilot coding agents**. Each skill is a self-contained directory that the agent installs and executes to handle specific domains (function point sizing, document conversion, chapter splitting, WBS generation, LLM-maintained wiki management, team knowledge base queries, skill security auditing, AI model cost routing, etc.).
+This repository contains a collection of **skills for GitHub Copilot coding agents**. Each skill is a self-contained directory that the agent installs and executes to handle specific domains (function point sizing, document conversion, chapter splitting, WBS generation, LLM-maintained wiki management, team knowledge base queries, skill security auditing, AI model cost routing, personal todo management, etc.).
 
 There are no build steps, no compiled artifacts, and no package manager. The repo is composed of Markdown files, JSON evaluation cases, and occasional Python helper scripts.
 

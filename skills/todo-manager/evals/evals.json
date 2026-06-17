@@ -1,0 +1,72 @@
+{
+  "skill_name": "todo-manager",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "aggiungi un todo: 'Rispondere all'email del cliente Rossi riguardo il preventivo'. Priorità alta, scade oggi.",
+      "expected_output": "Crea Todos/active/2026-06-17_rispondere-all-email-del-cliente-rossi.md con YAML frontmatter corretto (status: pending, priority: high, due_date: oggi), sezioni Task Details/Checklist/Execution Log, aggiorna README files. La validazione deve passare.",
+      "files": [],
+      "expectations": [
+        "A .md file is created inside Todos/active/ with a slug-based filename",
+        "The YAML frontmatter contains 'status: pending', 'priority: high', and 'due_date: 2026-06-17'",
+        "The file contains sections '## Task Details', '## Checklist', '## Execution Log'",
+        "The Checklist section has at least one unchecked item '- [ ]'",
+        "Todos/active/README.md is updated with an entry for this todo",
+        "Todos/README.md contains a 'Recent Changes' section with this todo",
+        "The validation script reports the file as valid"
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "add todo: 'Set up CI/CD pipeline for the backend repo'. No specific deadline, medium priority.",
+      "expected_output": "Creates Todos/active/YYYY-MM-DD_set-up-ci-cd-pipeline-for-the-backend-repo.md with priority: medium and NO due_date field in frontmatter.",
+      "files": [],
+      "expectations": [
+        "A .md file is created inside Todos/active/",
+        "The YAML frontmatter contains 'priority: medium'",
+        "The YAML frontmatter does NOT contain a 'due_date' field (no deadline)",
+        "The file contains a '## Checklist' section with at least one item",
+        "Todos/active/README.md entry shows 'none' as due date"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I need to remember to review the quarterly budget report by end of this week.",
+      "expected_output": "Skill triggers on implicit phrasing, creates todo with title about budget review, due date end of week (2026-06-21), and creates Todos/ structure if missing.",
+      "files": [],
+      "expectations": [
+        "A todo file is created (skill triggered from implicit phrasing without 'add todo')",
+        "The todo title relates to 'quarterly budget report'",
+        "The due_date is set to 2026-06-21 (end of this week)",
+        "Full Todos/ directory structure is created (RULE.md, README.md, active/, completed/)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Aggiorna il todo 'Fix login bug': cambia la priorità a medium e aggiungi la scadenza a domani (2026-06-18).",
+      "expected_output": "Trova il file fix-login-bug in Todos/active/, aggiorna priority: medium e due_date: 2026-06-18 nel frontmatter, aggiunge entry nell'Execution Log. La validazione deve passare.",
+      "files": [],
+      "expectations": [
+        "The existing todo file is found and modified (not a new file created)",
+        "The YAML frontmatter is updated: priority changes to 'medium'",
+        "The YAML frontmatter is updated: due_date is set to '2026-06-18'",
+        "An entry is added to '## Execution Log' documenting the changes",
+        "The validation script reports the updated file as valid"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Segna come completato il todo 'Fix login bug'.",
+      "expected_output": "Trova fix-login-bug in Todos/active/, aggiorna status: done, aggiunge completed_at, sposta in Todos/completed/, aggiorna entrambi i README.",
+      "files": [],
+      "expectations": [
+        "The todo file is moved from Todos/active/ to Todos/completed/",
+        "The YAML frontmatter contains 'status: done'",
+        "The YAML frontmatter contains a 'completed_at' field with today's date",
+        "An entry is added to '## Execution Log' noting completion",
+        "Todos/active/README.md no longer contains an entry for this todo",
+        "Todos/README.md 'Recent Changes' section mentions the completion"
+      ]
+    }
+  ]
+}
