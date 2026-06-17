@@ -1,7 +1,7 @@
 ---
 name: todo-manager
 description: >
-  Gestione di todo personali su file system (directory Todos/): creazione, aggiornamento, completamento.
+  Gestione di todo personali su file system (directory .todos/): creazione, aggiornamento, completamento.
   Usa questa skill per: (1) CREARE un todo ("add todo", "nuovo todo", "crea todo", "aggiungi todo",
   "I need to remember to...", "ho bisogno di ricordarmi di...", "add to my todo list"),
   (2) AGGIORNARE un todo ("update todo", "update the priority of", "modifica il todo",
@@ -14,7 +14,9 @@ description: >
 
 # Todo Manager
 
-Gestione completa del ciclo di vita dei todo: creazione, aggiornamento e completamento.
+Gestione del ciclo di vita dei todo personali. L'agent propone i contenuti semantici; tutte le operazioni sul filesystem sono delegate a `todo.py`.
+
+**Script:** `$HOME/.agents/skills/todo-manager/scripts/todo.py`
 
 ---
 
@@ -28,209 +30,211 @@ Gestione completa del ciclo di vita dei todo: creazione, aggiornamento e complet
 
 ---
 
-## Fase 0 — Localizza la directory Todos
+## Fase 0 — Localizza `.todos/`
 
-Prima di qualsiasi operazione, cerca `Todos/` in:
+Prima di qualsiasi operazione, cerca `.todos/` in:
 1. Directory di lavoro corrente
 2. Cartelle parent (fino a 3 livelli)
 3. Percorsi comuni: `~/kb/`, `~/notes/`, `~/Documents/`
 
-Se non trovata (solo per CREATE): offri di creare la struttura:
-> "No Todos directory found. Would you like me to create one?"
-> - Yes, create in `[path suggerito]`
-> - Yes, in a different location
-> - No, cancel
+**CREATE** — se `.todos/` non esiste, chiedi conferma e inizializza:
 
-Se l'utente conferma, crea con il **Default RULE.md** (vedi in fondo).
+```bash
+python3 $HOME/.agents/skills/todo-manager/scripts/todo.py init --dir "<path>/.todos"
+```
 
-Per UPDATE e COMPLETE, se non esiste `Todos/` → messaggio di errore chiaro.
+**UPDATE / COMPLETE** — se `.todos/` non esiste → errore: "No .todos directory found."
 
 ---
 
 ## CREATE — Aggiungi un nuovo todo
 
-### Step 1: Raccolta informazioni
+### Fase A — Proposta (agent)
 
-Raccogli dal prompt dell'utente (o chiedi con `ask_user` se mancanti):
+Dal prompt dell'utente, estrai o inferisci:
+- **Titolo** (obbligatorio)
+- **Descrizione** (Task Details): proposta contestuale basata sul titolo e sul contesto conversazionale
+- **Checklist**: almeno uno step concreto e pertinente
+- **Priorità**: `high` / `medium` / `low` — proposta in base all'urgenza percepita
+- **Scadenza**: data `YYYY-MM-DD` o `none` — proposta in base al contesto
 
-- **Titolo** (obbligatorio): breve descrizione del task
-- **Priorità**: `high` / `medium` (default) / `low`
-- **Scadenza** (opzionale): `today` / `tomorrow` / `this week` / data specifica / nessuna
+> **Importante:** i suggerimenti li genera l'agent, non uno script. Non inventare default silenziosi per priorità o scadenza se il contesto non è sufficiente.
 
-### Step 2: Controlla duplicati
+### Fase B — Validazione e conferma obbligatoria (agent + utente)
 
-Scansiona `Todos/active/` per titoli simili (case-insensitive). Se esiste già:
-> "A similar todo already exists: *[title]*."
-> - Create anyway (append counter: `_2`, `_3`…)
-> - Open existing
-> - Cancel
+**Non procedere mai alla Fase C senza conferma esplicita dell'utente.**
 
-### Step 3: Genera il file
-
-**Formato filename:** `YYYY-MM-DD_[slug].md`
-- Slug: titolo lowercase, spazi → trattini, solo alfanumerici + trattini, max 50 char
-- Esempio: `2025-01-13_reply-to-client-email.md`
-
-**Crea `Todos/active/[filename]`** con questo template esatto:
-
-```markdown
----
-title: [Titolo fornito dall'utente]
-status: pending
-priority: [high|medium|low]
-created_at: [YYYY-MM-DD]
-due_date: [YYYY-MM-DD se fornita, altrimenti ometti questo campo]
-source_file: null
-source_type: manual
-tags: []
-dependencies: []
-related_files: []
----
-
-# [Title]
-
-## Task Details
-
-[Breve placeholder: "_Fill in task details here._"]
-
-## Checklist
-
-- [ ] [Primo step — l'utente può modificare]
-
-## Execution Log
-
-### [Data odierna YYYY-MM-DD]
-- Todo created manually
-- Status: pending
-- Priority: [priority]
-```
-
-> **Nota sul `due_date`:** includi il campo solo se l'utente ha fornito una scadenza. Se non specificata, ometti completamente il campo dal frontmatter.
-
-### Step 4: Aggiorna governance
-
-**`Todos/active/README.md`** — aggiungi entry:
-```
-- [filename](filename) — [title] (Priority: [priority], Due: [date o 'none'])
-```
-Aggiorna "Last updated: YYYY-MM-DD".
-
-**`Todos/README.md`** — aggiorna conteggio attivi e sezione "Recent Changes":
-```
-- YYYY-MM-DD: Added "[title]"
-```
-Mantieni max 10 voci in "Recent Changes".
-
-### Step 5: Valida e conferma
-
-Esegui lo script di validazione (vedi sezione Script) sul file appena creato, poi mostra:
+Presenta un riepilogo completo con `ask_user`:
 
 ```
-✅ Todo created successfully!
+📋 Riepilogo todo proposto:
 
-  Title:     [title]
-  Priority:  [priority]
-  Due Date:  [date o 'No deadline']
-  Location:  Todos/active/[filename]
+  Titolo:      [titolo]
+  Priorità:    [high|medium|low]
+  Scadenza:    [YYYY-MM-DD oppure "nessuna"]
+  Descrizione: [testo proposto]
+  Checklist:
+    - [ ] step 1
+    - [ ] step 2
+    ...
+
+Confermi o vuoi modificare qualcosa?
+- ✅ Conferma tutto
+- ✏️ Modifica titolo
+- ✏️ Modifica descrizione
+- ✏️ Modifica checklist
+- ✏️ Modifica priorità
+- ✏️ Modifica scadenza
+- ❌ Annulla
+```
+
+Regole obbligatorie:
+- Se **priorità** manca o è ambigua → **devi chiedere** prima di procedere
+- Se **scadenza** manca o è ambigua → **devi chiedere** prima di procedere
+- Se **descrizione** o **checklist** sono vuote → **devi proporre e chiedere conferma**
+- Se l'utente annulla → nessun file creato
+
+Ripeti la conferma finché tutti i campi obbligatori sono esplicitamente approvati.
+
+### Fase C — Creazione deterministica (script)
+
+```bash
+python3 $HOME/.agents/skills/todo-manager/scripts/todo.py create \
+  --dir "<path>/.todos" \
+  --title "Titolo confermato" \
+  --priority high|medium|low \
+  --due YYYY-MM-DD|none \
+  --details "Descrizione confermata" \
+  --check "Step 1" \
+  --check "Step 2"
+```
+
+**Gestione duplicati:** se lo script risponde con `"error": "duplicate_found"`:
+
+```
+Un todo simile esiste già: [titolo].
+- Crea comunque (usa --force)
+- Apri quello esistente
+- Annulla
+```
+
+Per creare comunque, aggiungi `--force` al comando `create`.
+
+**Risposta attesa (successo):**
+
+```json
+{
+  "success": true,
+  "operation": "create",
+  "title": "...",
+  "priority": "...",
+  "due_date": "...",
+  "filename": "YYYY-MM-DD_slug.md",
+  "path": ".../.todos/active/...",
+  "valid": true
+}
+```
+
+Mostra all'utente:
+
+```
+✅ Todo creato!
+
+  Titolo:     [title]
+  Priorità:   [priority]
+  Scadenza:   [due_date o 'Nessuna']
+  Percorso:   .todos/active/[filename]
 ```
 
 ---
 
 ## UPDATE — Modifica un todo esistente
 
-### Step 1: Individua il todo
+### Step 1: Trova il todo
 
-Cerca in `Todos/active/` il file il cui titolo o slug corrisponde a quanto indicato dall'utente.
-Se più file corrispondono, mostra la lista e chiedi quale.
-Se non trovato, avvisa l'utente.
+```bash
+python3 $HOME/.agents/skills/todo-manager/scripts/todo.py find \
+  --dir "<path>/.todos" \
+  --query "fragmento titolo o slug"
+```
 
-### Step 2: Determina cosa cambiare
+- **0 risultati** → avvisa l'utente
+- **1 risultato** → usa lo `slug` restituito
+- **N risultati** → mostra la lista e chiedi quale modificare
 
-Campi aggiornabili:
-- `title` — aggiorna anche il filename e le entry nei README
-- `priority` — `high` / `medium` / `low`
-- `due_date` — nuova data o rimozione
-- `status` — `pending` / `in_progress`
-- `tags` — aggiungi/rimuovi tag
-- `dependencies` / `related_files`
+### Step 2: Conferma le modifiche
 
-### Step 3: Applica le modifiche
+Riassumi le modifiche richieste e chiedi conferma con `ask_user` prima di applicarle.
 
-1. Aggiorna il frontmatter YAML
-2. Aggiungi entry in `## Execution Log`:
-   ```
-   ### [Data odierna]
-   - Updated: [campo] → [nuovo valore]
-   ```
-3. Se il titolo è cambiato: rinomina il file e aggiorna `Todos/active/README.md`
+### Step 3: Applica con lo script
 
-### Step 4: Valida e conferma
+```bash
+python3 $HOME/.agents/skills/todo-manager/scripts/todo.py update \
+  --dir "<path>/.todos" \
+  --slug "<slug>" \
+  [--title "Nuovo titolo"] \
+  [--priority high|medium|low] \
+  [--due YYYY-MM-DD] \
+  [--remove-due] \
+  [--status pending|in_progress] \
+  [--add-tag "tag"] \
+  [--remove-tag "tag"]
+```
 
-Esegui lo script di validazione, poi mostra un riepilogo delle modifiche applicate.
+Lo script aggiorna frontmatter, execution log, filename (se cambia il titolo) e README di governance.
+
+Mostra il riepilogo JSON delle modifiche applicate.
 
 ---
 
 ## COMPLETE — Segna un todo come completato
 
-### Step 1: Individua il todo
+### Step 1: Trova il todo
 
-Cerca in `Todos/active/` (come per UPDATE).
+Come per UPDATE, usa `find` e disambigua se necessario.
 
-### Step 2: Aggiorna il file
+### Step 2: Conferma
 
-1. Cambia `status: pending` → `status: done` nel frontmatter
-2. Aggiungi entry in `## Execution Log`:
-   ```
-   ### [Data odierna]
-   - Todo completed
-   - Status: done
-   ```
-3. Aggiungi campo `completed_at: [YYYY-MM-DD]` al frontmatter
+Chiedi conferma con `ask_user` se non è esplicita nel prompt.
 
-### Step 3: Sposta il file
+### Step 3: Completa con lo script
 
-```
-Todos/active/[filename]  →  Todos/completed/[filename]
+```bash
+python3 $HOME/.agents/skills/todo-manager/scripts/todo.py complete \
+  --dir "<path>/.todos" \
+  --slug "<slug>"
 ```
 
-### Step 4: Aggiorna governance
+Lo script imposta `status: done`, aggiunge `completed_at`, aggiorna l'execution log, sposta il file in `.todos/completed/` e aggiorna i README.
 
-- Rimuovi entry da `Todos/active/README.md`
-- Aggiorna "Last updated"
-- Aggiorna `Todos/README.md`: decrementa active, incrementa completed
-- Aggiungi a "Recent Changes": `- YYYY-MM-DD: Completed "[title]"`
-
-### Step 5: Conferma
+Mostra:
 
 ```
-✅ Todo completed!
+✅ Todo completato!
 
-  Title:     [title]
-  Completed: [date]
-  Archived:  Todos/completed/[filename]
+  Titolo:      [title]
+  Completato:  [completed_at]
+  Archiviato:  .todos/completed/[filename]
 ```
 
 ---
 
-## Script di validazione
+## Validazione
 
-Usa lo script `$HOME/.agents/skills/todo-manager/scripts/validate_todo.py` per verificare che un file todo rispetti il formato.
-
-**Quando eseguirlo:** dopo CREATE e UPDATE.
+Lo script valida automaticamente dopo `create` e `update`. Per validazione manuale:
 
 ```bash
-python3 $HOME/.agents/skills/todo-manager/scripts/validate_todo.py <path/to/todo.md>
+python3 $HOME/.agents/skills/todo-manager/scripts/todo.py validate \
+  --file "<path/to/todo.md>"
 ```
 
-Lo script verifica:
-- Presenza e correttezza del frontmatter YAML
+Verifica:
+- Frontmatter YAML corretto
 - Campi obbligatori: `title`, `status`, `priority`, `created_at`
-- Valori validi: `status` ∈ {pending, in_progress, done}, `priority` ∈ {high, medium, low}
-- Formato date: `YYYY-MM-DD`
+- Valori validi per `status` e `priority`
+- Date in formato `YYYY-MM-DD`
 - Sezioni obbligatorie: `## Task Details`, `## Checklist`, `## Execution Log`
 - Almeno un item in `## Checklist`
-
-Se la validazione fallisce, mostra gli errori e chiedi all'utente se vuole procedere comunque.
 
 ---
 
@@ -238,43 +242,25 @@ Se la validazione fallisce, mostra gli errori e chiedi all'utente se vuole proce
 
 | Situazione | Azione |
 |---|---|
-| `Todos/` non trovata (CREATE) | Offri di creare la struttura |
-| `Todos/` non trovata (UPDATE/COMPLETE) | Errore: "No Todos directory found." |
-| Todo non trovato (UPDATE/COMPLETE) | Messaggio chiaro + suggerisci ricerca |
-| Titolo duplicato (CREATE) | Avvisa, offri opzioni |
-| Utente cancella a metà | Nessun file creato/modificato |
-| `Todos/active/` mancante | Creala prima di scrivere |
+| `.todos/` non trovata (CREATE) | Proponi `todo.py init` |
+| `.todos/` non trovata (UPDATE/COMPLETE) | Errore: "No .todos directory found." |
+| Todo non trovato | Messaggio chiaro + suggerisci `find` |
+| Duplicato (CREATE) | Mostra opzioni; usa `--force` se confermato |
+| Utente annulla in Fase B | Nessun file creato |
+| `valid: false` nel JSON | Mostra `validation_errors` e non dichiarare successo |
 
 ---
 
-## Default RULE.md Template
+## Ruoli: agent vs script
 
-```markdown
-# Todos — Personal Task Management
+| Responsabilità | Chi |
+|---|---|
+| Proporre descrizione, checklist, priorità, scadenza | **Agent** |
+| Confermare con l'utente tutti i campi obbligatori | **Agent** |
+| Scrivere file `.md`, slug, frontmatter, execution log | **Script** |
+| Aggiornare README di governance | **Script** |
+| Spostare `active/` → `completed/` | **Script** |
+| Inizializzare struttura `.todos/` | **Script** |
+| Validare formato file | **Script** |
 
-## Purpose
-
-Centralized management of all todo items.
-
-## Todo Tracking
-
-enabled: true
-todos_directory: [percorso assoluto di questa Todos/]
-
-## Structure
-
-Todos/
-├── active/     # Todo attivi
-└── completed/  # Todo completati
-
-## Naming Convention
-
-YYYY-MM-DD_todo-title-slug.md
-
-## Allowed Operations
-
-- Create: Allowed
-- Update: Allowed (must update execution log)
-- Delete: Not allowed (archive to completed/ instead)
-- Move: Only between active/ and completed/
-```
+**Non scrivere mai manualmente file todo o README di governance.** Usa sempre `todo.py`.

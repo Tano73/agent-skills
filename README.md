@@ -16,7 +16,7 @@ Each skill is a self-contained directory containing a `SKILL.md` prompt file, ev
 | [skill-security-auditor](./skills/skill-security-auditor/) | Audits skill definitions (`SKILL.md` and bundled scripts) for malicious, deceptive, or dangerous content before installation. Triggers on any safety review request for a skill. |
 | [smart-router](./skills/smart-router/) | Routes tasks to the most cost-effective AI model by scoring task complexity with a cheap analyzer model, then executing with the best-fit tier (`cheap`, `balanced`, `heavy`, `frontier`, `code-mid`, `code-heavy`). Supports multi-client configuration (Cursor, Claude Code, Codex CLI, …). |
 | [team-kb](./skills/team-kb/) | Answers questions from the team's knowledge base stored in DocMind. Searches team documentation, project specs, architecture decisions, technical requirements, and API specs. |
-| [todo-manager](./skills/todo-manager/) | Manages personal todo items in a `Todos/` directory on the filesystem: create, update, and complete tasks. Includes a `validate_todo.py` script that checks frontmatter fields, date formats, and required Markdown sections. |
+| [todo-manager](./skills/todo-manager/) | Manages personal todo items in a `.todos/` directory on the filesystem: create, update, and complete tasks. The agent proposes and confirms semantic content; `todo.py` handles all deterministic filesystem operations (file creation, governance READMEs, validation). |
 
 ## Repository structure
 
