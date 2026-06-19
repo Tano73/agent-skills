@@ -5,96 +5,44 @@ description: Answer questions about the team's knowledge base using DocMind. Use
 
 # Team Knowledge Base
 
-Answer questions by searching the team knowledge base in DocMind, then synthesizing a response that is firmly anchored to the retrieved text.
+Answer questions by searching the team knowledge base. **Never invent information** — every claim must come from a retrieved document.
 
-## How to answer a question
+## Step 1 — Check the local LLM wiki (if available)
 
-### 1. Identify the search strategy
+If the `llm-wiki-manager` skill is available **and** a `wiki/` directory exists in the workspace, query it first. It may already contain a synthesized answer.
 
-Think about what the user is asking:
-- Is the question about a specific project? Check `listProjects` to find the right project name if unclear.
-- Is it a conceptual question? Use `mode: "hybrid"` (combines semantic + keyword).
-- Does it contain exact technical terms, method names, or IDs? Use `mode: "fulltext"`.
-- When in doubt, use `mode: "hybrid"` — it has automatic fallback and works best for most queries.
+## Step 2 — Search DocMind
 
-### 2. Search DocMind
+Call `searchFlavorChunks` with these parameters:
 
-Call `searchFlavorChunks` with a focused query. Key parameters:
-- `project`: the project name (required). If the user doesn't specify a project, try the most relevant one or search across a couple of candidate projects in parallel.
-- `query`: rephrase the user's question as a clear search query; expand abbreviations and include synonyms.
-- `mode`: `"hybrid"` as default, `"fulltext"` for exact terms.
-- `adjacentChunks`: set to `1` or `2` to get surrounding context when a chunk alone is not enough to form a complete answer.
-- `limit`: 5–8 chunks is usually enough; increase to 10 if the topic spans multiple documents.
+| Parameter | Value |
+|-----------|-------|
+| `project` | Project name from the user. If unknown, call `listProjects` first and pick the most relevant one. |
+| `query` | Rephrase the user's question in 3–8 keywords; expand abbreviations; add synonyms. |
+| `mode` | `"hybrid"` (default). Use `"fulltext"` for exact terms or IDs. |
+| `adjacentChunks` | `1` or `2` when a chunk looks cut off or needs surrounding context. |
+| `limit` | `5`–`8` chunks; raise to `10` for broad topics. |
 
-If the first search returns 0 results or poor results:
-- Try rephrasing with different keywords.
-- Try `mode: "semantic"` if `"fulltext"` returned nothing.
-- Try a sibling project if the first one had no relevant content.
+**If results are poor or empty**, retry in order:
+1. Rephrase the query with different keywords.
+2. Switch to `mode: "semantic"`.
+3. Try a related project with `listProjects`.
 
-### 3. Build the answer
+## Step 3 — Build and format the answer
 
-Synthesize the response from the retrieved chunks:
-- **Ground every claim** in the retrieved text. Don't add information that isn't in the search results.
-- **Cite the source** inline for each key point, using the format:  
-  `(Source: <displayName or uniqueName>, line <N>)` for a single line, or  
-  `(Source: <displayName or uniqueName>, lines <N>–<M>)` for a range — both forms are correct
-- If multiple chunks from different documents support the same point, list all sources.
-- If a chunk is only partially relevant, say so — don't overstate what the document covers.
-- If the search returns nothing useful, be honest: tell the user you didn't find relevant content in the knowledge base and suggest they check the project or refine the query.
+- Write only what the retrieved chunks support. Do not add outside knowledge.
+- Cite every key point inline: `(Source: <document name>, line N)` or `lines N–M`.
+- If chunks from multiple documents support the same point, cite all of them.
+- For **factual questions**: direct answer → supporting quote → citation.
+- For **broad questions**: use headings or bullets, each backed by a citation.
+- End every response with a **Sources** section listing all document names used.
 
-### 4. Format the response
+## When information is insufficient
 
-Structure answers to be scannable:
-- For factual/lookup questions: a direct answer followed by the supporting quote and citation.
-- For broader conceptual questions: use headings or bullet points, each backed by a citation.
-- Always end with a "Sources" section listing the unique document names used.
+If no search attempt returns enough content, **do not guess**. Ask the user:
 
-## Example
-
-**User:** How does authentication work in the ETG project?
-
-**Steps:**
-1. Search `project: "ETG"`, `query: "authentication access management"`, `mode: "hybrid"`, `limit: 6`.
-2. If weak results, also try `project: "Keycloak"` since auth might live there.
-3. Synthesize answer from the returned chunks with inline citations.
-
-**Response format:**
-```
-Authentication in ETG uses Keycloak-based OAuth2 flows with role-based access control...
-
-> "Il sistema adotta un meccanismo di autenticazione basato su token JWT emessi da Keycloak..."
-(Source: SF-GROOT-ETG-V1_7-cap04, lines 12–18)
-
-**Sources:**
-- SF-GROOT-ETG-V1_7-cap04 — "04 - 4 Requisiti di sviluppo – Gestione Accessi"
-```
-
-## Available projects
-
-The following projects are available in DocMind (use `listProjects` if you need a fresh list):
-
-| Project | Description |
-|---------|-------------|
-| Agentic | Agentic/AI-related docs (33 docs) |
-| AMR | AMR project (2 docs) |
-| Apache-Airflow | Airflow (15 docs) |
-| demo | Demo content (1 doc) |
-| Engingeering | Engineering docs (97 docs) |
-| ETG | ETG project specs (45 docs) |
-| FPA | FPA (1 doc) |
-| gatesender | Gatesender (22 docs) |
-| Karpathy-LLM-Wiki | LLM Wiki (1 doc) |
-| Keycloak | Keycloak docs (20 docs) |
-| NIPAM | NIPAM project (14 docs) |
-| NPRESS | NPRESS (17 docs) |
-| OBG-BATCH-FILEGW | OBG Batch/File Gateway (67 docs) |
-| OBG-GUP_HXX | OBG GUP HXX (2 docs) |
-| RETELIT | Retelit (4 docs) |
-| VendorsHub | VendorsHub (23 docs) |
-
-## Tips
-
-- **Be precise about project scoping.** A vague search across the wrong project gives noise. If unsure, ask the user which project they mean.
-- **Prefer shorter, focused queries** over long sentences — `searchFlavorChunks` works better with 3–8 keywords than with a full question.
-- **Use `adjacentChunks`** when a chunk is cut off mid-sentence or clearly needs surrounding context to make sense.
-- **Never invent content.** If you can't find it in the KB, say so clearly.
+> "Non ho trovato informazioni sufficienti nella knowledge base. Vuoi che estenda la ricerca a:
+> - 🌐 **Web** (ricerca pubblica online)?
+> - 🧠 **Base di conoscenza interna** (conoscenza generale del modello)?
+>
+> In entrambi i casi indicherò sempre le fonti utilizzate."
