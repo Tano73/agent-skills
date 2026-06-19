@@ -18,6 +18,9 @@ agent-skills/
 │       ├── scripts/          # Python or shell helper scripts (optional)
 │       ├── bin/              # CLI executables / control scripts (optional, alternative to scripts/)
 │       └── references/       # Reference data / lookup tables (optional)
+├── instructions/             # Reusable agent instruction snippets
+│   ├── Karpaty-Code.md       # Behavioral coding guidelines (Think Before Coding, Simplicity First, …)
+│   └── team-kb.md            # Team knowledge base search instructions
 ├── sync-skills.sh            # Sync tool: repo skills/ ↔ ~/.agents/skills/
 ├── AGENTS.md
 ├── LICENSE
@@ -85,6 +88,17 @@ Use `sync-skills.sh` to synchronize skills between the repo and `$HOME/.agents/s
 ```
 
 The script uses SHA-256 checksums to detect differences and `rsync` (with `cp` fallback) for copying.
+
+## Instructions directory
+
+The `instructions/` directory contains **reusable agent instruction snippets** — Markdown files that can be embedded verbatim into an `AGENTS.md`, a system prompt, or a Copilot coding agent configuration. They are not skills and do not have `evals/`.
+
+| File | Purpose |
+|------|---------|
+| `Karpaty-Code.md` | Behavioral coding guidelines (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution). Drop into any repo's `AGENTS.md` to reduce common LLM coding mistakes. |
+| `team-kb.md` | Search strategy for the team knowledge base in DocMind. Use as the system prompt context for any agent that must answer questions from internal documentation. |
+
+To add a new instruction snippet: create a `.md` file in `instructions/` with a clear `# Title` heading, and document it in the table above and in `README.md`.
 
 ## Adding a new skill
 

@@ -2,6 +2,7 @@
 # =============================================================================
 # sync-skills.sh
 # Purpose : Bidirectional sync between repo skills/ and $HOME/.agents/skills/
+#           and between repo instructions/ and $HOME/.agents/instructions/
 # Usage   : ./sync-skills.sh [status|sync] [-h|--help]
 # Author  : <author>
 # =============================================================================
@@ -30,16 +31,22 @@ usage() {
 Usage: $(basename "$0") [status|sync] [--all] [-h|--help]
 
 Commands:
-  status       (default) Show sync state of each skill — exits 1 if any differ.
-  sync         Interactive bidirectional sync for REPO_ONLY and DIFFERS skills.
-  sync --all   Also include INSTALL_ONLY skills in the sync session.
+  status       (default) Show sync state of each skill and instruction — exits 1 if any differ.
+  sync         Interactive bidirectional sync for REPO_ONLY and DIFFERS items.
+  sync --all   Also include INSTALL_ONLY items in the sync session.
 
 Options:
   -h, --help        Print this help and exit.
 
 Directories:
-  Repo skills  : <repo-root>/skills/
-  Install dir  : \$HOME/.agents/skills/
+  Repo skills        : <repo-root>/skills/
+  Install skills     : \$HOME/.agents/skills/
+  Repo instructions  : <repo-root>/instructions/
+  Install instructions: \$HOME/.agents/instructions/
+
+Default choices during sync:
+  REPO_ONLY / DIFFERS  → push  (repo is the source of truth)
+  INSTALL_ONLY         → skip
 EOF
 }
 
@@ -51,6 +58,8 @@ REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null \
 
 SKILLS_DIR="${REPO_ROOT}/skills"
 INSTALL_DIR="${HOME}/.agents/skills"
+INSTRUCTIONS_DIR="${REPO_ROOT}/instructions"
+INSTRUCTIONS_INSTALL_DIR="${HOME}/.agents/instructions"
 
 # ---------------------------------------------------------------------------
 # SHA-256 helper: compute a single fingerprint for an entire directory.
@@ -93,6 +102,30 @@ copy_dir() {
     rm -rf "$dst"
     cp -r "$src" "$dst"
   fi
+}
+
+# ---------------------------------------------------------------------------
+# file_sha256 <file>  →  prints the SHA-256 hash of a single file
+# ---------------------------------------------------------------------------
+file_sha256() {
+  local file="$1"
+  if command -v sha256sum &>/dev/null; then
+    sha256sum "$file" | awk '{print $1}'
+  elif command -v shasum &>/dev/null; then
+    shasum -a 256 "$file" | awk '{print $1}'
+  else
+    echo -e "${C_RED}Error: neither sha256sum nor shasum found.${C_RESET}" >&2
+    exit 2
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# copy_file <src> <dst>  →  copies a single file, creating parent dirs
+# ---------------------------------------------------------------------------
+copy_file() {
+  local src="$1" dst="$2"
+  mkdir -p "$(dirname "$dst")"
+  cp "$src" "$dst"
 }
 
 # ---------------------------------------------------------------------------
@@ -162,16 +195,77 @@ collect_skills() {
 }
 
 # ---------------------------------------------------------------------------
+# instruction_status_line <filename>
+# Like skill_status_line but works on individual .md files in instructions/
+# ---------------------------------------------------------------------------
+instruction_status_line() {
+  local name="$1"
+  local repo_file="${INSTRUCTIONS_DIR}/${name}"
+  local inst_file="${INSTRUCTIONS_INSTALL_DIR}/${name}"
+  local in_repo=false in_install=false
+
+  [ -f "$repo_file" ]  && in_repo=true
+  [ -f "$inst_file" ]  && in_install=true
+
+  if $in_repo && $in_install; then
+    local repo_hash inst_hash
+    repo_hash="$(file_sha256 "$repo_file")"
+    inst_hash="$(file_sha256 "$inst_file")"
+    if [ "$repo_hash" = "$inst_hash" ]; then
+      printf "  ${C_GREEN}✓ IN SYNC       ${C_RESET} %s\n" "$name"
+      echo "IN_SYNC"
+    else
+      printf "  ${C_YELLOW}≠ DIFFERS       ${C_RESET} %s\n" "$name"
+      echo "DIFFERS"
+    fi
+  elif $in_repo && ! $in_install; then
+    printf "  ${C_CYAN}→ REPO ONLY     ${C_RESET} %s\n" "$name"
+    echo "REPO_ONLY"
+  else
+    printf "  ${C_MAGENTA}← INSTALL ONLY  ${C_RESET} %s\n" "$name"
+    echo "INSTALL_ONLY"
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# collect_instructions  →  prints sorted list of instruction file names
+# ---------------------------------------------------------------------------
+collect_instructions() {
+  local names=()
+
+  if [ -d "$INSTRUCTIONS_DIR" ]; then
+    for f in "${INSTRUCTIONS_DIR}"/*.md; do
+      [ -f "$f" ] && names+=("$(basename "$f")")
+    done
+  fi
+
+  if [ -d "$INSTRUCTIONS_INSTALL_DIR" ]; then
+    for f in "${INSTRUCTIONS_INSTALL_DIR}"/*.md; do
+      [ -f "$f" ] || continue
+      local name
+      name="$(basename "$f")"
+      if [ ! -f "${INSTRUCTIONS_DIR}/${name}" ]; then
+        names+=("$name")
+      fi
+    done
+  fi
+
+  printf '%s\n' "${names[@]}" | sort -u
+}
+
+# ---------------------------------------------------------------------------
 # status command
 # ---------------------------------------------------------------------------
 cmd_status() {
   mkdir -p "$INSTALL_DIR"
+  mkdir -p "$INSTRUCTIONS_INSTALL_DIR"
 
   local n_total=0 n_sync=0 n_differs=0 n_repo=0 n_install=0
   local out_differs=() out_repo=() out_install=()
 
   echo
-  echo "  Repo skills  : ${SKILLS_DIR}"
+  echo "  ── Skills ────────────────────────────────────────"
+  echo "  Repo         : ${SKILLS_DIR}"
   echo "  Install dir  : ${INSTALL_DIR}"
   echo "  ${SEPARATOR:0:50}"
   echo
@@ -203,8 +297,42 @@ cmd_status() {
     "$n_total" "$n_sync" "$n_differs" "$n_repo" "$n_install"
   echo
 
-  # Exit 1 if anything is out of sync
-  [ $((n_differs + n_repo + n_install)) -eq 0 ]
+  # --- Instructions section ---
+  local ni_total=0 ni_sync=0 ni_differs=0 ni_repo=0 ni_install=0
+
+  echo
+  echo "  ── Instructions ──────────────────────────────────"
+  echo "  Repo         : ${INSTRUCTIONS_DIR}"
+  echo "  Install dir  : ${INSTRUCTIONS_INSTALL_DIR}"
+  echo "  ${SEPARATOR:0:50}"
+  echo
+
+  while IFS= read -r name; do
+    ni_total=$((ni_total + 1))
+    local combined
+    combined="$(instruction_status_line "$name" 2>&1)"
+    local display state
+    display="$(echo "$combined" | head -n1)"
+    state="$(echo "$combined" | tail -n1)"
+
+    echo "$display"
+
+    case "$state" in
+      IN_SYNC)      ni_sync=$((ni_sync + 1)) ;;
+      DIFFERS)      ni_differs=$((ni_differs + 1)) ;;
+      REPO_ONLY)    ni_repo=$((ni_repo + 1)) ;;
+      INSTALL_ONLY) ni_install=$((ni_install + 1)) ;;
+    esac
+  done < <(collect_instructions)
+
+  echo
+  echo "  ${SEPARATOR:0:50}"
+  printf "  %d instructions checked · %d in sync · %d differ · %d repo-only · %d install-only\n" \
+    "$ni_total" "$ni_sync" "$ni_differs" "$ni_repo" "$ni_install"
+  echo
+
+  # Exit 1 if anything is out of sync (skills or instructions)
+  [ $((n_differs + n_repo + n_install + ni_differs + ni_repo + ni_install)) -eq 0 ]
 }
 
 # ---------------------------------------------------------------------------
@@ -214,11 +342,13 @@ cmd_status() {
 cmd_sync() {
   local include_install_only="${1:-}"
   mkdir -p "$INSTALL_DIR"
+  mkdir -p "$INSTRUCTIONS_INSTALL_DIR"
 
   local actions_taken=()
 
   echo
-  echo "  Repo skills  : ${SKILLS_DIR}"
+  echo "  ── Skills ────────────────────────────────────────"
+  echo "  Repo         : ${SKILLS_DIR}"
   echo "  Install dir  : ${INSTALL_DIR}"
   echo "  ${SEPARATOR:0:50}"
   echo
@@ -262,6 +392,13 @@ cmd_sync() {
       echo "  Not present in repo."
     fi
 
+    # Default: push when skill exists in repo; skip when install-only
+    local default_choice
+    case "$state" in
+      REPO_ONLY|DIFFERS) default_choice="p" ;;
+      INSTALL_ONLY)      default_choice="s" ;;
+    esac
+
     echo
     echo "    [p] push  repo → install"
     echo "    [u] pull  install → repo"
@@ -270,27 +407,107 @@ cmd_sync() {
     local choice=""
     # Read from /dev/tty explicitly: the while loop redirects stdin from
     # collect_skills, so a plain `read` would consume that instead of the terminal.
-    while [[ ! "$choice" =~ ^[pPuUsS]$ ]]; do
-      read -rp "    Choice [p/u/s]: " choice </dev/tty
+    while [[ ! "$choice" =~ ^[pPuUsS]?$ ]]; do
+      read -rp "    Choice [p/u/s, default=${default_choice}]: " choice </dev/tty
     done
+    [ -z "$choice" ] && choice="$default_choice"
 
     case "${choice,,}" in
       p)
         copy_dir "$repo_dir" "$inst_dir"
         printf "  ${C_GREEN}✓ pushed${C_RESET} %s → install\n" "$skill"
-        actions_taken+=("pushed: $skill")
+        actions_taken+=("pushed skill: $skill")
         ;;
       u)
         copy_dir "$inst_dir" "$repo_dir"
         printf "  ${C_GREEN}✓ pulled${C_RESET} %s → repo\n" "$skill"
-        actions_taken+=("pulled: $skill")
+        actions_taken+=("pulled skill: $skill")
         ;;
       s)
         printf "  ${C_YELLOW}⊘ skipped${C_RESET} %s\n" "$skill"
-        actions_taken+=("skipped: $skill")
+        actions_taken+=("skipped skill: $skill")
         ;;
     esac
   done < <(collect_skills)
+
+  # --- Instructions ---
+  echo
+  echo "  ── Instructions ──────────────────────────────────"
+  echo "  Repo         : ${INSTRUCTIONS_DIR}"
+  echo "  Install dir  : ${INSTRUCTIONS_INSTALL_DIR}"
+  echo "  ${SEPARATOR:0:50}"
+  echo
+
+  while IFS= read -r name; do
+    local repo_file="${INSTRUCTIONS_DIR}/${name}"
+    local inst_file="${INSTRUCTIONS_INSTALL_DIR}/${name}"
+
+    local state
+    if [ -f "$repo_file" ] && [ -f "$inst_file" ]; then
+      local rh ih
+      rh="$(file_sha256 "$repo_file")"
+      ih="$(file_sha256 "$inst_file")"
+      [ "$rh" = "$ih" ] && state="IN_SYNC" || state="DIFFERS"
+    elif [ -f "$repo_file" ]; then
+      state="REPO_ONLY"
+    else
+      state="INSTALL_ONLY"
+    fi
+
+    if [ "$state" = "IN_SYNC" ]; then
+      printf "  ${C_GREEN}✓ IN SYNC       ${C_RESET} %s — skipping\n" "$name"
+      continue
+    fi
+    if [ "$state" = "INSTALL_ONLY" ] && [ -z "$include_install_only" ]; then
+      continue
+    fi
+
+    echo
+    printf "  ${C_YELLOW}▶ %s${C_RESET}  [%s]\n" "$name" "$state"
+
+    if [ "$state" = "DIFFERS" ]; then
+      echo "  Changes:"
+      diff "$repo_file" "$inst_file" 2>/dev/null | head -20 | sed 's/^/    /' || true
+    elif [ "$state" = "REPO_ONLY" ]; then
+      echo "  Not present in install dir."
+    else
+      echo "  Not present in repo."
+    fi
+
+    local default_choice
+    case "$state" in
+      REPO_ONLY|DIFFERS) default_choice="p" ;;
+      INSTALL_ONLY)      default_choice="s" ;;
+    esac
+
+    echo
+    echo "    [p] push  repo → install"
+    echo "    [u] pull  install → repo"
+    echo "    [s] skip"
+
+    local choice=""
+    while [[ ! "$choice" =~ ^[pPuUsS]?$ ]]; do
+      read -rp "    Choice [p/u/s, default=${default_choice}]: " choice </dev/tty
+    done
+    [ -z "$choice" ] && choice="$default_choice"
+
+    case "${choice,,}" in
+      p)
+        copy_file "$repo_file" "$inst_file"
+        printf "  ${C_GREEN}✓ pushed${C_RESET} %s → install\n" "$name"
+        actions_taken+=("pushed instruction: $name")
+        ;;
+      u)
+        copy_file "$inst_file" "$repo_file"
+        printf "  ${C_GREEN}✓ pulled${C_RESET} %s → repo\n" "$name"
+        actions_taken+=("pulled instruction: $name")
+        ;;
+      s)
+        printf "  ${C_YELLOW}⊘ skipped${C_RESET} %s\n" "$name"
+        actions_taken+=("skipped instruction: $name")
+        ;;
+    esac
+  done < <(collect_instructions)
 
   echo
   echo "  ${SEPARATOR:0:50}"

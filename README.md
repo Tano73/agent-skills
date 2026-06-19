@@ -18,6 +18,15 @@ Each skill is a self-contained directory containing a `SKILL.md` prompt file, ev
 | [team-kb](./skills/team-kb/) | Answers questions from the team's knowledge base stored in DocMind. Searches team documentation, project specs, architecture decisions, technical requirements, and API specs. |
 | [todo-manager](./skills/todo-manager/) | Manages personal todo items in a `.todos/` directory on the filesystem: create, update, and complete tasks. The agent proposes and confirms semantic content; `todo.py` handles all deterministic filesystem operations (file creation, governance READMEs, validation). |
 
+## Instructions
+
+The [`instructions/`](./instructions/) directory contains reusable agent instruction snippets — drop-in Markdown files for `AGENTS.md` or system prompts.
+
+| File | Purpose |
+|------|---------|
+| [Karpaty-Code.md](./instructions/Karpaty-Code.md) | Behavioral coding guidelines (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution). |
+| [team-kb.md](./instructions/team-kb.md) | Search strategy for the team knowledge base in DocMind; use as context for any agent answering from internal docs. |
+
 ## Repository structure
 
 ```
@@ -29,6 +38,9 @@ agent-skills/
 │       │   └── evals.json    # Evaluation cases for automated testing
 │       ├── scripts/          # (optional) Helper scripts invoked by the skill
 │       └── references/       # (optional) Reference data or lookup tables
+├── instructions/             # Reusable agent instruction snippets
+│   ├── Karpaty-Code.md       # Behavioral coding guidelines
+│   └── team-kb.md            # Team knowledge base search instructions
 ├── sync-skills.sh            # Sync tool: repo skills/ ↔ ~/.agents/skills/
 ├── AGENTS.md
 ├── LICENSE
