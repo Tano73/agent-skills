@@ -346,6 +346,12 @@ cmd_sync() {
 
   local actions_taken=()
 
+  # Collect all items into arrays BEFORE the interactive loops so that stdin
+  # remains connected to the terminal and plain `read -rp` works without tricks.
+  local -a all_skills all_instructions
+  mapfile -t all_skills       < <(collect_skills)
+  mapfile -t all_instructions < <(collect_instructions)
+
   echo
   echo "  ── Skills ────────────────────────────────────────"
   echo "  Repo         : ${SKILLS_DIR}"
@@ -353,11 +359,10 @@ cmd_sync() {
   echo "  ${SEPARATOR:0:50}"
   echo
 
-  while IFS= read -r skill; do
+  for skill in "${all_skills[@]}"; do
     local repo_dir="${SKILLS_DIR}/${skill}"
     local inst_dir="${INSTALL_DIR}/${skill}"
 
-    # Determine state
     local state
     if [ -d "$repo_dir" ] && [ -d "$inst_dir" ]; then
       local rh ih
@@ -370,7 +375,6 @@ cmd_sync() {
       state="INSTALL_ONLY"
     fi
 
-    # Skip IN_SYNC always; skip INSTALL_ONLY unless --all was requested
     if [ "$state" = "IN_SYNC" ]; then
       printf "  ${C_GREEN}✓ IN SYNC       ${C_RESET} %s — skipping\n" "$skill"
       continue
@@ -382,7 +386,6 @@ cmd_sync() {
     echo
     printf "  ${C_YELLOW}▶ %s${C_RESET}  [%s]\n" "$skill" "$state"
 
-    # Show a brief diff summary
     if [ "$state" = "DIFFERS" ]; then
       echo "  Changes:"
       diff -rq "$repo_dir" "$inst_dir" 2>/dev/null | sed 's/^/    /' || true
@@ -392,7 +395,6 @@ cmd_sync() {
       echo "  Not present in repo."
     fi
 
-    # Default: push when skill exists in repo; skip when install-only
     local default_choice
     case "$state" in
       REPO_ONLY|DIFFERS) default_choice="p" ;;
@@ -404,11 +406,10 @@ cmd_sync() {
     echo "    [u] pull  install → repo"
     echo "    [s] skip"
 
-    local choice=""
-    # Read from /dev/tty explicitly: the while loop redirects stdin from
-    # collect_skills, so a plain `read` would consume that instead of the terminal.
-    while [[ ! "$choice" =~ ^[pPuUsS]?$ ]]; do
-      read -rp "    Choice [p/u/s, default=${default_choice}]: " choice </dev/tty
+    local choice
+    while true; do
+      read -rp "    Choice [p/u/s, default=${default_choice}]: " choice
+      [[ "$choice" =~ ^[pPuUsS]?$ ]] && break
     done
     [ -z "$choice" ] && choice="$default_choice"
 
@@ -428,7 +429,7 @@ cmd_sync() {
         actions_taken+=("skipped skill: $skill")
         ;;
     esac
-  done < <(collect_skills)
+  done
 
   # --- Instructions ---
   echo
@@ -438,7 +439,7 @@ cmd_sync() {
   echo "  ${SEPARATOR:0:50}"
   echo
 
-  while IFS= read -r name; do
+  for name in "${all_instructions[@]}"; do
     local repo_file="${INSTRUCTIONS_DIR}/${name}"
     local inst_file="${INSTRUCTIONS_INSTALL_DIR}/${name}"
 
@@ -485,9 +486,10 @@ cmd_sync() {
     echo "    [u] pull  install → repo"
     echo "    [s] skip"
 
-    local choice=""
-    while [[ ! "$choice" =~ ^[pPuUsS]?$ ]]; do
-      read -rp "    Choice [p/u/s, default=${default_choice}]: " choice </dev/tty
+    local choice
+    while true; do
+      read -rp "    Choice [p/u/s, default=${default_choice}]: " choice
+      [[ "$choice" =~ ^[pPuUsS]?$ ]] && break
     done
     [ -z "$choice" ] && choice="$default_choice"
 
@@ -507,7 +509,7 @@ cmd_sync() {
         actions_taken+=("skipped instruction: $name")
         ;;
     esac
-  done < <(collect_instructions)
+  done
 
   echo
   echo "  ${SEPARATOR:0:50}"
