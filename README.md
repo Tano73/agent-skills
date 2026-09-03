@@ -10,7 +10,7 @@ Each skill is a self-contained directory containing a `SKILL.md` prompt file, ev
 |-------|-------------|
 | [ffpa-analyzer](./skills/ffpa-analyzer/) | Function Point analysis using the FFPA methodology (Fast Function Points Analysis — Gartner). Counts and sizes software from source code, specs, user stories, or textual descriptions. |
 | [markdown-chapter-splitter](./skills/markdown-chapter-splitter/) | Splits large Markdown files into smaller files, one per chapter. Detects H1 headings and inferred text-based chapter markers automatically. |
-| [mineru-pdf-to-md](./skills/mineru-pdf-to-md/) | Converts PDFs and images to high-fidelity Markdown with MinerU and the MinerU2.5-Pro VLM, preserving tables, formulas, and extracted images. Detects the viable backend (remote VLM server, local GPU, or CPU pipeline), bootstraps MinerU in a dedicated venv, flattens the output to `<name>.md` + `images/`, and reports parsing quality (empty pages, missing images, text density). |
+| [mineru-pdf-to-md](./skills/mineru-pdf-to-md/) | Converts PDFs and images to high-fidelity Markdown with MinerU and the MinerU2.5-Pro VLM, preserving tables, formulas, and extracted images. Detects the viable backend (remote VLM server, local GPU, or CPU pipeline), bootstraps MinerU in a dedicated venv, flattens the output to `<name>.md` + `images/`, and reports parsing quality (text coverage vs the source PDF, lost pages, missing images). |
 | [pandoc-convert](./skills/pandoc-convert/) | Converts documents between formats (Markdown, DOCX, PDF, HTML, EPUB, …) using pandoc. |
 | [wbs-generator](./skills/wbs-generator/) | Generates a detailed Work Breakdown Structure (WBS) in Markdown and CSV from ENGenius DESIGN/DEVELOPER documents stored on DocMind. Includes a CSV syntax validator (`scripts/validate_wbs_csv.py`) that checks structure, valid complexity codes, numeric fields, and formula consistency; the skill loops until the CSV passes validation before uploading. |
 | [llm-wiki-manager](./skills/llm-wiki-manager/) | Manages an LLM-maintained personal knowledge base (llm-wiki) as a growing collection of structured Markdown files. Supports setup, document ingestion, knowledge queries, and wiki health checks. |
@@ -38,15 +38,19 @@ agent-skills/
 │       ├── evals/
 │       │   └── evals.json    # Evaluation cases for automated testing
 │       ├── scripts/          # (optional) Helper scripts invoked by the skill
+│       ├── bin/              # (optional) CLI executables / control scripts
 │       └── references/       # (optional) Reference data or lookup tables
 ├── instructions/             # Reusable agent instruction snippets
 │   ├── Karpaty-Code.md       # Behavioral coding guidelines
 │   └── team-kb.md            # Team knowledge base search instructions
 ├── sync-skills.sh            # Sync tool: repo skills/ ↔ ~/.agents/skills/
+├── .gitignore                # Ignores skill-creator eval workspaces (`*-workspace/`)
 ├── AGENTS.md
 ├── LICENSE
 └── README.md
 ```
+
+Skill-creator eval workspaces (`<skill-name>-workspace/`) sit next to `skills/` during local testing and are gitignored — do not commit them.
 
 ## Installation
 

@@ -2,7 +2,7 @@
 
 ## Project overview
 
-This repository contains a collection of **skills for GitHub Copilot coding agents**. Each skill is a self-contained directory that the agent installs and executes to handle specific domains (function point sizing, document conversion, chapter splitting, WBS generation, LLM-maintained wiki management, team knowledge base queries, skill security auditing, AI model cost routing, personal todo management, etc.).
+This repository contains a collection of **skills for GitHub Copilot coding agents**. Each skill is a self-contained directory that the agent installs and executes to handle specific domains (function point sizing, document conversion with pandoc, high-fidelity PDF/image → Markdown with MinerU, chapter splitting, WBS generation, LLM-maintained wiki management, team knowledge base queries, skill security auditing, AI model cost routing, personal todo management, etc.).
 
 There are no build steps, no compiled artifacts, and no package manager. The repo is composed of Markdown files, JSON evaluation cases, and occasional Python helper scripts.
 
@@ -22,12 +22,15 @@ agent-skills/
 │   ├── Karpaty-Code.md       # Behavioral coding guidelines (Think Before Coding, Simplicity First, …)
 │   └── team-kb.md            # Team knowledge base search instructions
 ├── sync-skills.sh            # Sync tool: repo skills/ ↔ ~/.agents/skills/
+├── .gitignore                # Ignores skill-creator eval workspaces (`*-workspace/`)
 ├── AGENTS.md
 ├── LICENSE
 └── README.md
 ```
 
 Every skill **must** have `SKILL.md` and `evals/evals.json`. Everything else is optional.
+
+Eval runs created by the skill-creator skill live in sibling directories named `<skill-name>-workspace/` (iteration outputs, fixtures, sandbox stubs). Those directories are gitignored via `*-workspace/` and must not be committed.
 
 ## SKILL.md anatomy
 
@@ -107,7 +110,8 @@ To add a new instruction snippet: create a `.md` file in `instructions/` with a 
 3. Add `evals/evals.json` with at least one eval covering the main use case.
 4. If the skill needs a helper script, place it in `scripts/` and make it executable.
 5. If the skill references lookup tables or normative data, place them in `references/`.
-6. Update `README.md` to add a row for the new skill in the Skills table.
+6. Update `README.md` to add a row for the new skill in the Skills table and an `npx skills add …` line in the Installation section.
+7. If the skill introduces a new domain or convention for the repo, also refresh the overview / structure notes in `AGENTS.md`.
 
 ## Modifying an existing skill
 
@@ -121,6 +125,8 @@ To add a new instruction snippet: create a `.md` file in `instructions/` with a 
 There is no automated test runner configured in this repo. Evals are executed manually or via the Copilot skill-creator skill.
 
 To run an eval manually, copy the `prompt` from `evals.json` into the agent chat and verify the response against `expected_output` and each item in `expectations`.
+
+When using skill-creator for a full with-skill / baseline comparison, put results under `<skill-name>-workspace/` next to `skills/` (not inside the skill directory). That path is ignored by git; only keep `evals/evals.json` inside the skill as the durable test definition.
 
 ## Code style
 
