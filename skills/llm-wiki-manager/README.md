@@ -104,11 +104,12 @@ Ogni volta che l'agente impara qualcosa di nuovo (ingerendo un documento, rispon
    (Trigger riconosciuti: `setup`, `inizializza`, `crea wiki`, `crea una nuova wiki`.)
 
 3. L'agente esegue **SETUP**:
-   - Conferma con te il wiki root (vedi step 1).
+   - Cerca prima una wiki esistente (cwd, parent, path comuni come `./knowledge/`, `~/kb/`); se non la trova, conferma con te il wiki root proposto.
    - Ti fa un'intervista breve sul dominio (quali sono le entity principali, i concept chiave).
    - Se DocMind è disponibile, fa un pre-scan dei progetti DocMind per trovare documenti rilevanti e li ingerisce automaticamente.
    - Crea la struttura completa con pagine seed già linkate tra loro.
-   - **Git smart**: se la cartella scelta è già dentro un repo git (Scenario B), salta `git init` e committa direttamente nel repo padre. Altrimenti (Scenario A) inizializza un nuovo repo dedicato.
+   - Esegue un lint meccanico locale (`scripts/wiki_lint.py`).
+   - **Git smart, con conferma**: se la cartella è già in un repo git, propone un commit nel repo padre; altrimenti propone `git init` + commit. **Non esegue `git commit` senza un sì esplicito.**
 
 4. **Aggiungi il binding DocMind** all'`AGENTS.md` generato (sezione `## DocMind Binding`):
 
@@ -277,14 +278,22 @@ Le risposte salvate **compongono come quelle ingerite**: niente differenza tra "
 
 **Quando**: ogni tanto (settimanalmente / dopo molte ingest). Fa pulizia.
 
+I check meccanici (link rotti, source dangling, `source_file` mancanti, pagine fuori da `index.md`, orphan, pagine senza link in uscita) sono eseguiti dallo script bundled:
+
+```bash
+python3 $HOME/.agents/skills/llm-wiki-manager/scripts/wiki_lint.py "<wiki-root>"
+```
+
+L'agente interpreta l'output, aggiunge i check semantici e produce il report unificato.
+
 **Cosa controlla**:
 
 | Severity | Categoria | Cosa cattura |
 |---|---|---|
 | 🔴 | Contradictions | Notice `⚠️ Contradiction` non ancora risolti |
-| 🔴 | Dangling Source References | Slug citati ma source page mancante |
-| 🟠 | Missing Provenance | Source page con `source_file` rotto |
-| 🟠 | Orphan Pages | Pagine senza link in entrata |
+| 🔴 | Dangling Source References | Slug citati ma source page mancante *(script)* |
+| 🟠 | Missing Provenance | Source page con `source_file` rotto *(script)* |
+| 🟠 | Orphan Pages | Pagine senza link in entrata *(script)* |
 | 🟠 | Missing Pages | Termini citati 2+ volte ma senza pagina dedicata |
 | 🟡 | Stale Content | Pagine probabilmente obsolete |
 | 🟡 | Missing Cross-References | Link ovvi non ancora fatti |
@@ -294,7 +303,7 @@ Le risposte salvate **compongono come quelle ingerite**: niente differenza tra "
 | **DocMind-aware** | (vedi sotto) |
 
 **Due modalità**:
-- **Veloce** (default): solo check locali. Veloce, no chiamate DocMind.
+- **Veloce** (default): `wiki_lint.py` + check semantici locali. Nessuna chiamata DocMind.
 - **Completo**: include 6 check DocMind-aware (vedi [Integrazione DocMind](#integrazione-docmind)). Trigger esplicito: *"lint completo"* / *"audit"*.
 
 **Cosa fai dopo**: l'agente ti chiede quali issue risolvere. Puoi anche dire *"correggi tutti i 🔴 e 🟠"*.

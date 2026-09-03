@@ -4,14 +4,15 @@
     {
       "id": 0,
       "prompt": "Ho una directory /tmp/test-wiki-setup vuota. Voglio creare un nuovo wiki personale per documentare tutto quello che imparo su Kubernetes e cloud-native. Inizializzalo li.",
-      "expected_output": "The skill sets up the wiki under /tmp/test-wiki-setup, performs a domain interview or infers the Kubernetes/cloud-native domain, creates the full directory structure, creates seed entity and concept pages, writes a non-empty wiki/index.md and a real wiki/overview.md knowledge map, appends a setup entry to wiki/log.md, writes AGENTS.md, and reports the created pages.",
+      "expected_output": "The skill sets up the wiki under /tmp/test-wiki-setup, performs a domain interview or infers the Kubernetes/cloud-native domain, creates the full directory structure, creates seed entity and concept pages, writes a non-empty wiki/index.md and a real wiki/overview.md knowledge map, appends a setup entry to wiki/log.md, writes AGENTS.md, runs wiki_lint.py (or an equivalent structural check), proposes a git commit and waits for confirmation instead of committing silently, and reports the created pages.",
       "files": [],
       "expectations": [
         "The response creates raw/, raw/assets/, wiki/entities/, wiki/concepts/, and wiki/sources/ under /tmp/test-wiki-setup.",
         "The response creates AGENTS.md, wiki/index.md, wiki/log.md, and wiki/overview.md.",
         "The response creates at least one entity page and at least one concept page related to Kubernetes or cloud-native topics.",
         "wiki/index.md is described as containing entries for the created pages, not empty placeholder tables only.",
-        "wiki/overview.md is described as a real knowledge map or synthesis, not just a placeholder."
+        "wiki/overview.md is described as a real knowledge map or synthesis, not just a placeholder.",
+        "The response proposes a git commit (or git init) and waits for user confirmation instead of committing silently."
       ]
     },
     {
@@ -30,7 +31,7 @@
     {
       "id": 2,
       "prompt": "Cosa sai di Kubernetes Operators e come si differenziano da un semplice Deployment? Fornisci un confronto.",
-      "expected_output": "The skill reads wiki/index.md, identifies the relevant pages, and synthesizes a comparative answer as a Markdown table comparing Operator vs Deployment on dimensions like lifecycle management, automation, complexity, and use cases. The answer includes citations with relative links to wiki pages and asks whether the user wants to save the answer as a wiki page.",
+      "expected_output": "The skill reads wiki/index.md, identifies the relevant pages within a bounded read budget, and synthesizes a comparative answer as a Markdown table comparing Operator vs Deployment on dimensions like lifecycle management, automation, complexity, and use cases. The answer includes citations with relative links to wiki pages and asks whether the user wants to save the answer as a wiki page.",
       "files": [],
       "expectations": [
         "The answer format is a Markdown table, not plain prose only.",
@@ -77,14 +78,59 @@
     {
       "id": 6,
       "prompt": "Se DocMind e disponibile e contiene un documento rilevante su Kubernetes Operators, cercalo e aggiungilo al wiki come sorgente.",
-      "expected_output": "This eval is intended only for environments where DocMind MCP tools are available and at least one relevant document can be found. In that case, the skill uses DocMind search or fetch to retrieve the document, derives a candidate filename in raw/, applies the same versioning check used for every other source, reuses the raw file if it is identical or saves a new file/version if needed, creates wiki/sources/<source-slug>.md with source_file pointing to the exact raw file used, updates wiki/index.md and wiki/log.md, and reports the affected pages.",
+      "expected_output": "This eval is intended only for environments where DocMind MCP tools are available and at least one relevant document can be found. In that case, the skill uses DocMind search or fetch to retrieve the document, derives a candidate filename in raw/, applies the same versioning check used for every other source, reuses the raw file if it is identical or saves a new file/version if needed, creates wiki/sources/<source-slug>.md with source_file pointing to the exact raw file used, updates wiki/index.md and wiki/log.md, and reports the affected pages. If DocMind is unavailable, the skill says so and does not invent a fetch.",
       "files": [],
       "expectations": [
-        "This eval is intended to be executed only when DocMind MCP tools are available and a suitable document exists.",
-        "The response uses a DocMind search or fetch step before ingestion.",
-        "The response applies the standard raw/ versioning check before writing any file.",
-        "The fetched DocMind content is stored in raw/ and the resulting source page uses source_file pointing to that exact raw file.",
-        "The response updates wiki/index.md and wiki/log.md and reports the touched pages."
+        "If DocMind tools are unavailable, the response says so and does not pretend to have fetched a document.",
+        "If DocMind is available, the response uses a DocMind search or fetch step before ingestion.",
+        "If DocMind is available, the response applies the standard raw/ versioning check before writing any file.",
+        "If DocMind is available, the fetched content is stored in raw/ and the resulting source page uses source_file pointing to that exact raw file."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Fai un lint della wiki e dimmi cosa non va.",
+      "expected_output": "The skill runs wiki_lint.py on the wiki root, merges the mechanical findings with any semantic checks it performs, presents a structured lint report (dangling sources, broken links, orphans, index gaps, etc.), asks which items to fix, and appends a lint entry to wiki/log.md.",
+      "files": [],
+      "expectations": [
+        "The response runs wiki_lint.py (or clearly cites its output) rather than only hand-waving a manual walk.",
+        "The response presents a structured report with severity categories.",
+        "The response asks which findings to fix, instead of silently rewriting the whole wiki.",
+        "The response appends or proposes a lint entry in wiki/log.md."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Aggiungi un todo: ricordami di aggiornare il certificato TLS di staging entro venerdi.",
+      "expected_output": "Negative case: the skill must NOT activate. Personal todos belong to todo-manager, not the wiki. The agent should route to todo-manager or decline wiki ingest for a disposable reminder.",
+      "files": [],
+      "expectations": [
+        "The response does not create wiki pages or raw/ files for the reminder.",
+        "The response recognizes this as a personal todo / reminder, not a knowledge-base ingest.",
+        "The response points to todo-manager or an equivalent todo workflow instead of INGEST."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Cosa sai del protocollo Zigbee Mesh Routing interno al nostro firmware proprietario XYZ-9000?",
+      "expected_output": "Edge case: if the wiki has no relevant pages, the skill admits the gap honestly, does not invent firmware details, and offers INGEST or DocMind search as next steps.",
+      "files": [],
+      "expectations": [
+        "The response does not invent detailed proprietary firmware knowledge absent from the wiki.",
+        "The response states that the wiki has little or no coverage of the topic (or equivalent honesty).",
+        "The response offers a concrete next step such as INGEST of a source or a DocMind search."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "La spec DocMind pw-saml-partner-x e appena passata in SPEC_DONE. Esegui lo spec-compound.",
+      "expected_output": "When DocMind is available, the skill reads references/docmind.md, lists the files it would create or modify (raw snapshot, source page, entity/concept updates, index, log), and waits for explicit user confirmation before writing. It must not write to raw/ or wiki/ before that confirmation. If DocMind is unavailable, it says so and stops.",
+      "files": [],
+      "expectations": [
+        "The response requires explicit user confirmation before writing under raw/ or wiki/.",
+        "The response lists the files that would be created or modified (or equivalent preview).",
+        "The response does not claim the compound completed successfully without that confirmation.",
+        "If DocMind tools are unavailable, the response says so instead of fabricating a compound."
       ]
     }
   ]
