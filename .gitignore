@@ -2,3 +2,7 @@
 
 # Skill-creator eval workspaces (sibling to skills/, iteration outputs, fixtures, sandbox)
 *-workspace/
+
+# Python bytecode from running helper scripts in skills/*/scripts/
+__pycache__/
+*.pyc
