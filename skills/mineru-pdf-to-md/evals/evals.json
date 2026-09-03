@@ -1,0 +1,90 @@
+{
+  "skill_name": "mineru-pdf-to-md",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Ho scaricato il capitolato tecnico del bando in ~/Documenti/capitolato_2026.pdf, 40 pagine con un sacco di tabelle. Me lo converti in markdown che devo darlo in pasto a un LLM?",
+      "expected_output": "L'agent esegue mineru_env.py check, riferisce il backend rilevato, installa MinerU se manca (previa conferma), converte con mineru_convert.py e consegna il percorso del .md con la cartella images/ accanto, commentando il report qualità.",
+      "files": [],
+      "expectations": [
+        "Esegue mineru_env.py check prima di tentare la conversione.",
+        "Non lancia mineru direttamente saltando gli script bundled.",
+        "Chiede conferma prima di installare MinerU se non è presente.",
+        "Usa mineru_convert.py per la conversione anziché comporre a mano il comando mineru.",
+        "Comunica il percorso finale del file .md e la presenza della cartella images/.",
+        "Commenta il report qualità invece di limitarsi a incollarlo."
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "Voglio usare MinerU2.5-Pro per estrarre il testo da questo paper: /tmp/attention_is_all_you_need.pdf",
+      "expected_output": "Su una macchina senza GPU l'agent rileva il fallback al backend pipeline, dichiara esplicitamente che MinerU2.5-Pro non verrà usato e propone le alternative (procedere con pipeline, usare un server remoto, forzare vlm-auto-engine accettando la lentezza) prima di procedere.",
+      "files": [],
+      "expectations": [
+        "Rileva che l'ambiente è CPU-only e che il backend raccomandato è pipeline.",
+        "Dichiara esplicitamente all'utente che con il backend pipeline il modello MinerU2.5-Pro non viene usato.",
+        "Propone almeno un'alternativa concreta per usare davvero MinerU2.5-Pro (server remoto o vlm-auto-engine).",
+        "Non afferma falsamente di aver usato MinerU2.5-Pro.",
+        "Il Markdown prodotto contiene stringhe riconoscibili del documento sorgente, non testo segnaposto: una non-conversione ben etichettata non è una conversione."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Abbiamo un server vllm con MinerU2.5-Pro attivo su http://10.0.0.15:30000. Converti /data/bilancio_2025.pdf in markdown usando quello.",
+      "expected_output": "L'agent usa il backend vlm-http-client passando --server-url http://10.0.0.15:30000, e se il server non risponde lo segnala invece di silenziosamente ripiegare su pipeline.",
+      "files": [],
+      "expectations": [
+        "Passa l'URL del server tramite --server-url o la variabile d'ambiente MINERU_SERVER_URL.",
+        "Il backend risultante è vlm-http-client (o hybrid-http-client), non pipeline.",
+        "Se il server non è raggiungibile, lo segnala esplicitamente all'utente invece di ripiegare in silenzio."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "converti sto manuale in md, sono tipo 600 pagine /home/luca/manuale_impianto.pdf",
+      "expected_output": "L'agent propone di convertire prima un campione di pagine con -s/-e per validare la qualità, stima i tempi in base al backend rilevato e procede sul documento completo solo dopo l'ok.",
+      "files": [],
+      "expectations": [
+        "Propone una conversione campione con le opzioni -s/-e prima dell'intero documento.",
+        "Fornisce una stima o un avviso sui tempi in base al backend rilevato.",
+        "Non lancia direttamente la conversione delle 600 pagine senza avvisare.",
+        "Usa gli script bundled (mineru_env.py, mineru_convert.py) invece di comporre a mano il comando mineru.",
+        "L'output finale rispetta il layout normalizzato <nome>.md + images/ accanto, senza l'albero annidato di MinerU.",
+        "Il documento consegnato è completo: se il report segnala pagine perse, le riconverte e le reintegra oppure dichiara la lacuna."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Ho la scansione di una fattura, /home/anna/scan_fattura.png. Riesci a tirarne fuori il testo in markdown? È in italiano, immagino serva impostare la lingua per l'OCR.",
+      "expected_output": "L'agent accetta l'immagine come input valido, converte con mineru_convert.py e chiarisce che per l'italiano non serve l'opzione --lang perché lo script latino è il default.",
+      "files": [],
+      "expectations": [
+        "Tratta il file PNG come input supportato senza chiedere di convertirlo prima in PDF.",
+        "Chiarisce che per l'italiano non serve l'opzione --lang.",
+        "Non passa un valore di --lang non valido come 'it' o 'italian'.",
+        "Il comando mineru mostrato all'utente è eseguibile senza errori dalla CLI reale.",
+        "Corregge la premessa sbagliata dell'utente invece di assecondarla."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Devo trasformare il verbale della riunione da verbale.docx a markdown, come faccio?",
+      "expected_output": "La skill non si attiva: un DOCX ha già struttura esplicita e va convertito con pandoc-convert. L'agent indirizza a quella strada.",
+      "files": [],
+      "expectations": [
+        "Non usa mineru né gli script di questa skill.",
+        "Indirizza verso pandoc-convert o un equivalente per la conversione DOCX → Markdown."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Ho questo file documentazione.md di 4000 righe, vorrei dividerlo in un file per ogni capitolo.",
+      "expected_output": "La skill non si attiva: l'input è già Markdown e la richiesta riguarda lo splitting, competenza di markdown-chapter-splitter.",
+      "files": [],
+      "expectations": [
+        "Non usa mineru né gli script di questa skill.",
+        "Riconosce che l'input è già Markdown e indirizza verso markdown-chapter-splitter."
+      ]
+    }
+  ]
+}
