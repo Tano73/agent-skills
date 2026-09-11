@@ -37,6 +37,31 @@
         "The response references OBG-BATCH-FILEGW project documents",
         "The response covers technical details about batch file gateway processing"
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "Nel repository è presente una knowledge base locale in knowledge/wiki/index.md. Trova cosa documenta sul rilascio della piattaforma Atlas. Se la knowledge base e DocMind non contengono informazioni sufficienti, come procedi?",
+      "expected_output": "The response searches the local wiki root under knowledge/ before DocMind and, if both sources are insufficient, asks for explicit permission before using web sources or general model knowledge.",
+      "files": [],
+      "expectations": [
+        "The response recognizes knowledge/ as a possible local wiki root rather than requiring a top-level wiki/ directory",
+        "The response searches or cites relevant local wiki pages before using DocMind",
+        "If the available sources are insufficient, the response asks the user to choose whether to extend the search to the web or to general model knowledge",
+        "The response does not use web sources or unsupported model knowledge without the user's explicit permission"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Nel repository GitHub acme/atlas-platform, ci sono issue aperte o chiuse che spiegano perché il deploy in produzione richiede un change record? Cerca prima nelle fonti della knowledge base e poi nelle issue pertinenti.",
+      "expected_output": "A response grounded in retrieved local, DocMind, or GitHub Issue sources. When relevant issues are found, it cites the issue number, title, and URL, distinguishes confirmed decisions from proposals or unresolved reports, and does not treat pull requests as issues.",
+      "files": [],
+      "expectations": [
+        "The response searches open and closed GitHub issues in acme/atlas-platform without searching pull requests",
+        "The response uses a focused query derived from the deployment and change-record topic",
+        "Any GitHub Issue claim includes the issue number, title, and URL in its citation",
+        "The response distinguishes an issue's status and treats unconfirmed proposals or reports as non-authoritative evidence",
+        "If no source is sufficient, the response asks permission before using web sources or general model knowledge"
+      ]
     }
   ]
 }
