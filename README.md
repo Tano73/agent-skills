@@ -15,7 +15,6 @@ Each skill is a self-contained directory containing a `SKILL.md` prompt file, ev
 | [wbs-generator](./skills/wbs-generator/) | Generates a detailed Work Breakdown Structure (WBS) in Markdown and CSV from ENGenius DESIGN/DEVELOPER documents stored on DocMind. Includes a CSV syntax validator (`scripts/validate_wbs_csv.py`) that checks structure, valid complexity codes, numeric fields, and formula consistency; the skill loops until the CSV passes validation before uploading. |
 | [llm-wiki-manager](./skills/llm-wiki-manager/) | Manages an LLM-maintained personal knowledge base (llm-wiki) as a growing collection of structured Markdown files. Supports setup, document ingestion, knowledge queries, and wiki health checks. |
 | [skill-security-auditor](./skills/skill-security-auditor/) | Audits skill definitions (`SKILL.md` and bundled scripts) for malicious, deceptive, or dangerous content before installation. Triggers on any safety review request for a skill. |
-| [smart-router](./skills/smart-router/) | Routes tasks to the most cost-effective AI model by scoring task complexity with a cheap analyzer model, then executing with the best-fit tier (`cheap`, `balanced`, `heavy`, `frontier`, `code-mid`, `code-heavy`). Supports multi-client configuration (Cursor, Claude Code, Codex CLI, …). |
 | [team-kb](./skills/team-kb/) | Answers questions from the team's knowledge base stored in DocMind. Searches team documentation, project specs, architecture decisions, technical requirements, and API specs. |
 | [todo-manager](./skills/todo-manager/) | Manages personal todo items in a `.todos/` directory on the filesystem: create, update, and complete tasks. The agent proposes and confirms semantic content; `todo.py` handles all deterministic filesystem operations (file creation, governance READMEs, validation). |
 
@@ -66,7 +65,6 @@ npx skills add https://github.com/Tano73/agent-skills --skill pandoc-convert
 npx skills add https://github.com/Tano73/agent-skills --skill wbs-generator
 npx skills add https://github.com/Tano73/agent-skills --skill llm-wiki-manager
 npx skills add https://github.com/Tano73/agent-skills --skill skill-security-auditor
-npx skills add https://github.com/Tano73/agent-skills --skill smart-router
 npx skills add https://github.com/Tano73/agent-skills --skill team-kb
 npx skills add https://github.com/Tano73/agent-skills --skill todo-manager
 ```
