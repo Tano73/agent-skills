@@ -19,8 +19,7 @@ agent-skills/
 │       ├── bin/              # CLI executables / control scripts (optional, alternative to scripts/)
 │       └── references/       # Reference data / lookup tables (optional)
 ├── instructions/             # Reusable agent instruction snippets
-│   ├── Karpaty-Code.md       # Behavioral coding guidelines (Think Before Coding, Simplicity First, …)
-│   └── team-kb.md            # Team knowledge base search instructions
+│   └── Karpaty-Code.md       # Behavioral coding guidelines (Think Before Coding, Simplicity First, …)
 ├── sync-skills.sh            # Sync tool: repo skills/ ↔ ~/.agents/skills/
 ├── .gitignore                # Ignores skill-creator eval workspaces (`*-workspace/`)
 ├── AGENTS.md
@@ -99,7 +98,6 @@ The `instructions/` directory contains **reusable agent instruction snippets** �
 | File | Purpose |
 |------|---------|
 | `Karpaty-Code.md` | Behavioral coding guidelines (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution). Drop into any repo's `AGENTS.md` to reduce common LLM coding mistakes. |
-| `team-kb.md` | Search strategy for the team knowledge base in DocMind. Use as the system prompt context for any agent that must answer questions from internal documentation. |
 
 To add a new instruction snippet: create a `.md` file in `instructions/` with a clear `# Title` heading, and document it in the table above and in `README.md`.
 

@@ -25,7 +25,6 @@ The [`instructions/`](./instructions/) directory contains reusable agent instruc
 | File | Purpose |
 |------|---------|
 | [Karpaty-Code.md](./instructions/Karpaty-Code.md) | Behavioral coding guidelines (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution). |
-| [team-kb.md](./instructions/team-kb.md) | Search strategy for the team knowledge base in DocMind; use as context for any agent answering from internal docs. |
 
 ## Repository structure
 
@@ -40,8 +39,7 @@ agent-skills/
 │       ├── bin/              # (optional) CLI executables / control scripts
 │       └── references/       # (optional) Reference data or lookup tables
 ├── instructions/             # Reusable agent instruction snippets
-│   ├── Karpaty-Code.md       # Behavioral coding guidelines
-│   └── team-kb.md            # Team knowledge base search instructions
+│   └── Karpaty-Code.md       # Behavioral coding guidelines
 ├── sync-skills.sh            # Sync tool: repo skills/ ↔ ~/.agents/skills/
 ├── .gitignore                # Ignores skill-creator eval workspaces (`*-workspace/`)
 ├── AGENTS.md
