@@ -29,6 +29,7 @@ FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 MD_LINK_RE = re.compile(r"(?<!!)\[([^\]]*)\]\(([^)\s]+)\)")
 SOURCES_FM_RE = re.compile(r"^sources:\s*\[(.*?)\]\s*$", re.MULTILINE | re.DOTALL)
 SOURCE_FILE_RE = re.compile(r"^source_file:\s*[\"']?([^\"'\n]+)[\"']?\s*$", re.MULTILINE)
+RESOURCE_RE = re.compile(r"^resource:\s*[\"']?([^\"'\n]+)[\"']?\s*$", re.MULTILINE)
 SOURCES_SECTION_RE = re.compile(
     r"^##\s+Sources(?:\s*&?\s*Examples)?\s*\n(.*?)(?=^##\s|\Z)",
     re.MULTILINE | re.DOTALL,
@@ -156,29 +157,55 @@ def lint(wiki_root: Path) -> list[dict]:
         meta, body = parse_frontmatter(text)
         full = text  # frontmatter + body for sources: field
 
-        # source_file existence
+        # resource / source_file provenance (resource preferred; source_file is a
+        # recognized legacy alias — OKF field-name alignment, no info loss)
         if rel.startswith("sources/"):
+            resource_match = RESOURCE_RE.search(full)
+            resource = resource_match.group(1).strip() if resource_match else meta.get("resource")
             sf_match = SOURCE_FILE_RE.search(full)
             source_file = sf_match.group(1).strip() if sf_match else meta.get("source_file")
-            if not source_file:
+
+            if resource and source_file and resource != source_file:
+                issues.append({
+                    "severity": "medium",
+                    "category": "field_conflict",
+                    "message": f"conflicting provenance: resource={resource!r} vs source_file={source_file!r}",
+                    "page": rel,
+                })
+
+            provenance = resource or source_file
+            if not provenance:
                 issues.append({
                     "severity": "medium",
                     "category": "missing_provenance",
-                    "message": "source page has no source_file frontmatter",
+                    "message": "source page has no resource/source_file frontmatter",
                     "page": rel,
                 })
             else:
-                candidate = wiki_root / source_file
+                candidate = wiki_root / provenance
                 if not candidate.is_file():
                     # also accept path relative to wiki/ (legacy mistakes)
-                    alt = wiki_dir / source_file
+                    alt = wiki_dir / provenance
                     if not alt.is_file():
                         issues.append({
                             "severity": "medium",
                             "category": "missing_provenance",
-                            "message": f"source_file does not exist: {source_file}",
+                            "message": f"resource/source_file does not exist: {provenance}",
                             "page": rel,
                         })
+
+        # category / type classification (type preferred; category is a recognized
+        # legacy alias — classification itself still comes from the folder, so this
+        # only guards against an inconsistent pair of values)
+        category_value = meta.get("category")
+        type_value = meta.get("type")
+        if category_value and type_value and category_value != type_value:
+            issues.append({
+                "severity": "medium",
+                "category": "field_conflict",
+                "message": f"conflicting classification: category={category_value!r} vs type={type_value!r}",
+                "page": rel,
+            })
 
         # sources: frontmatter slugs
         for slug in parse_sources_list(full):
@@ -280,6 +307,7 @@ def render_text(issues: list[dict], wiki_root: Path) -> str:
     labels = {
         "dangling_source": "🔴 Dangling Source References",
         "broken_link": "🔴 Broken Relative Links",
+        "field_conflict": "🟠 Conflicting Frontmatter Fields",
         "missing_provenance": "🟠 Missing Provenance",
         "orphan": "🟠 Orphan Pages",
         "no_outbound": "🟠 No Outbound Links",

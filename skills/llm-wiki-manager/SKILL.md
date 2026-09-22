@@ -225,7 +225,7 @@ Short reminders:
 ```yaml
 ---
 title: "Page Title"
-category: entity | concept | source | overview
+type: entity | concept | source | overview  # legacy alias: category (still recognized on read)
 tags: [tag1, tag2]
 sources: [source-slug-1]
 created: YYYY-MM-DD
@@ -237,6 +237,12 @@ updated: YYYY-MM-DD
 #   lastPushedAt: YYYY-MM-DD
 ---
 ```
+
+**OKF field alignment**: new pages write `type` (values unchanged: `entity | concept |
+source | overview`). Pages already using the legacy `category` field remain fully
+valid — `wiki_lint.py` never branches on this field's value (classification is by
+folder), and it now flags a page as inconsistent only if both `category` and `type`
+are present with different values.
 
 ### File naming
 - Always `kebab-case.md`
@@ -282,9 +288,9 @@ Definition and relevance.
 ```markdown
 ---
 title: "<Source Title>"
-category: source
+type: source  # legacy alias: category (still recognized on read)
 tags: [tag1, tag2]
-source_file: raw/<filename>
+resource: raw/<filename>  # legacy alias: source_file (still recognized on read)
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
 ---

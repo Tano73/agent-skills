@@ -1,0 +1,256 @@
+{
+  "schema_version": "v1alpha2",
+  "feature": "okf-frontmatter-field-alignment",
+  "tasks": {
+    "1.1": {
+      "task_fingerprint": "sha256:5f3cc751b5a3a65b7b3b40d3762834984bbbd60edaf3214ab6a00655a8f898c7",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d",
+        "after_code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d"
+      },
+      "requirements_fingerprint": "sha256:b455680da6e9ff31d70418b381e2c9057a22f90c8d85e3757a43fc1632f47744",
+      "design_fingerprint": "sha256:5971dca497fea72eb9ae48d38130362de127acff42f218ef7dcfedf4ace48aac",
+      "tasks_fingerprint": "sha256:7a61aa824b5c635ea2e3f142bd86fbed3efe62eb7ce263fdc81aaffdcf3a5775",
+      "code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d",
+      "profile": {
+        "platform": "linux/amd64",
+        "walden": "v0.10.5"
+      },
+      "steps": [
+        {
+          "command": [
+            "sh",
+            "-c",
+            "grep -F 'type: entity | concept | source | overview' skills/llm-wiki-manager/SKILL.md"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:45cbfcb297fcb62189326ff7610faf1834410e13ec5cee4a09e73f8b40c5368d"
+        },
+        {
+          "command": [
+            "sh",
+            "-c",
+            "grep -F 'legacy alias: category' skills/llm-wiki-manager/SKILL.md"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:dbbe5e616c014d918b304f508e9e1edc68b9d84a6451e239fc8bcfe5176eb14b"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-09-22T12:22:19Z"
+    },
+    "1.2": {
+      "task_fingerprint": "sha256:e7584e61d7f922c2f9497643ce63d3d51d2b9decca1d2b8b61755c864bda6ba1",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "verify",
+        "policy": "verify-purity/v1",
+        "assertion_result": "passed",
+        "integrity": "pure",
+        "before_code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d",
+        "after_code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d"
+      },
+      "requirements_fingerprint": "sha256:b455680da6e9ff31d70418b381e2c9057a22f90c8d85e3757a43fc1632f47744",
+      "design_fingerprint": "sha256:5971dca497fea72eb9ae48d38130362de127acff42f218ef7dcfedf4ace48aac",
+      "tasks_fingerprint": "sha256:7a61aa824b5c635ea2e3f142bd86fbed3efe62eb7ce263fdc81aaffdcf3a5775",
+      "code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d",
+      "profile": {
+        "platform": "linux/amd64",
+        "walden": "v0.10.5"
+      },
+      "steps": [
+        {
+          "command": [
+            "sh",
+            "-c",
+            "grep -F 'resource: raw/\u003cfilename\u003e' skills/llm-wiki-manager/SKILL.md"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:d697a65473425ea5516626d7c02bc7652692d4eb77ed7d1eec56376611221791"
+        },
+        {
+          "command": [
+            "sh",
+            "-c",
+            "grep -F 'legacy alias: source_file' skills/llm-wiki-manager/SKILL.md"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:d697a65473425ea5516626d7c02bc7652692d4eb77ed7d1eec56376611221791"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-09-22T12:22:19Z"
+    },
+    "2.1": {
+      "task_fingerprint": "sha256:1166b4784abbb3392e9a624001cd69ea552813a24fabba928823ecf542f91ab7",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "complete",
+        "policy": "completion-post-state/v1",
+        "assertion_result": "passed",
+        "integrity": "post-state",
+        "after_code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d"
+      },
+      "requirements_fingerprint": "sha256:b455680da6e9ff31d70418b381e2c9057a22f90c8d85e3757a43fc1632f47744",
+      "design_fingerprint": "sha256:5971dca497fea72eb9ae48d38130362de127acff42f218ef7dcfedf4ace48aac",
+      "tasks_fingerprint": "sha256:7a61aa824b5c635ea2e3f142bd86fbed3efe62eb7ce263fdc81aaffdcf3a5775",
+      "code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d",
+      "profile": {
+        "platform": "linux/amd64",
+        "walden": "v0.10.5"
+      },
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "skills/llm-wiki-manager/scripts/test_frontmatter_aliases.py",
+            "resource_only"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:9b7f1f5122327d9cecf443beeeeb2240bec6e04d5dc2ded4e2887be7e090bcc7"
+        },
+        {
+          "command": [
+            "python3",
+            "skills/llm-wiki-manager/scripts/test_frontmatter_aliases.py",
+            "source_file_only"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:bb72e8f3602a11d46a248eb7524bcac39753164cf2c17f721f7b148a2ddf0959"
+        },
+        {
+          "command": [
+            "python3",
+            "skills/llm-wiki-manager/scripts/test_frontmatter_aliases.py",
+            "neither_resource_nor_source_file"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:4f9d182afd86d81e952ff5200af3f40dea65fe49b5f2a53db7502bff35d87255"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-09-22T12:22:00Z"
+    },
+    "2.2": {
+      "task_fingerprint": "sha256:34549bbfa2c684aeb591133c34f35287f44fedecc0020a4784902b3d79d2221c",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "complete",
+        "policy": "completion-post-state/v1",
+        "assertion_result": "passed",
+        "integrity": "post-state",
+        "after_code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d"
+      },
+      "requirements_fingerprint": "sha256:b455680da6e9ff31d70418b381e2c9057a22f90c8d85e3757a43fc1632f47744",
+      "design_fingerprint": "sha256:5971dca497fea72eb9ae48d38130362de127acff42f218ef7dcfedf4ace48aac",
+      "tasks_fingerprint": "sha256:7a61aa824b5c635ea2e3f142bd86fbed3efe62eb7ce263fdc81aaffdcf3a5775",
+      "code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d",
+      "profile": {
+        "platform": "linux/amd64",
+        "walden": "v0.10.5"
+      },
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "skills/llm-wiki-manager/scripts/test_frontmatter_aliases.py",
+            "resource_source_file_conflict"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:118e2c3e9db68582112a3ba4c70d7eea7bab41e53ec380d817c75071aa437376"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-09-22T12:22:03Z"
+    },
+    "2.3": {
+      "task_fingerprint": "sha256:451be5c68616ebe750955a5552c72013ac4dfe90da1c4e177e20a24659d3f7c8",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "complete",
+        "policy": "completion-post-state/v1",
+        "assertion_result": "passed",
+        "integrity": "post-state",
+        "after_code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d"
+      },
+      "requirements_fingerprint": "sha256:b455680da6e9ff31d70418b381e2c9057a22f90c8d85e3757a43fc1632f47744",
+      "design_fingerprint": "sha256:5971dca497fea72eb9ae48d38130362de127acff42f218ef7dcfedf4ace48aac",
+      "tasks_fingerprint": "sha256:7a61aa824b5c635ea2e3f142bd86fbed3efe62eb7ce263fdc81aaffdcf3a5775",
+      "code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d",
+      "profile": {
+        "platform": "linux/amd64",
+        "walden": "v0.10.5"
+      },
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "skills/llm-wiki-manager/scripts/test_frontmatter_aliases.py",
+            "category_type_conflict"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:162963911f4149c7c0feb39ba93e7821dce66599e9b23a7da4dcbaac988ab446"
+        },
+        {
+          "command": [
+            "python3",
+            "skills/llm-wiki-manager/scripts/test_frontmatter_aliases.py",
+            "category_only_unaffected"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:755cfdc7490f0cf4309211901f2749b6e6c5c432bcae727edd7f29029c66e494"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-09-22T12:22:06Z"
+    },
+    "3.1": {
+      "task_fingerprint": "sha256:da867e4c669842526ca2f8e6decca0b390059714ec67b4ced390f1f69d78e58a",
+      "task_fingerprint_scheme": "walden/task-definition/v2",
+      "execution": {
+        "origin": "complete",
+        "policy": "completion-post-state/v1",
+        "assertion_result": "passed",
+        "integrity": "post-state",
+        "after_code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d"
+      },
+      "requirements_fingerprint": "sha256:b455680da6e9ff31d70418b381e2c9057a22f90c8d85e3757a43fc1632f47744",
+      "design_fingerprint": "sha256:5971dca497fea72eb9ae48d38130362de127acff42f218ef7dcfedf4ace48aac",
+      "tasks_fingerprint": "sha256:7a61aa824b5c635ea2e3f142bd86fbed3efe62eb7ce263fdc81aaffdcf3a5775",
+      "code_identity": "sha256:f776c2895dda233ba1b9ba62705af2e6ec9b4c199f64007bd3d001a03a57273d",
+      "profile": {
+        "platform": "linux/amd64",
+        "walden": "v0.10.5"
+      },
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "skills/llm-wiki-manager/scripts/test_frontmatter_aliases.py",
+            "all"
+          ],
+          "expected_exit": 0,
+          "actual_exit": 0,
+          "output_digest": "sha256:b7297698d292c0cb0183add446f54bef8b027fcb18695ee7a0e8d84dc09e9ebb"
+        }
+      ],
+      "result": "passed",
+      "verified_at": "2026-09-22T12:22:09Z"
+    }
+  }
+}
