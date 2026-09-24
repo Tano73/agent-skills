@@ -12,7 +12,7 @@ INGEST also accepts:
 - A DocMind `uniqueName` → `getFlavorByName(uniqueName)` to fetch the document
 - A search query on a DocMind project → `searchFlavorChunks(project, query, mode=hybrid)`
 
-When ingesting from DocMind, derive a candidate `raw/<slug>.md` filename from the DocMind `uniqueName` (converted to kebab-case), then apply the normal versioning check before writing anything. Proceed using the resolved raw file (for example `raw/<slug>.md` if reused or created, or `raw/<slug>-v2.md` if versioned) and set `source_file` in the source page frontmatter to that exact path.
+When ingesting from DocMind, derive a candidate `raw/<slug>.md` filename from the DocMind `uniqueName` (converted to kebab-case), then apply the normal versioning check (`raw_check.py`, see `references/setup-ingest.md`) before writing anything. Proceed using the resolved raw file (for example `raw/<slug>.md` if reused or created, or `raw/<slug>-v2.md` if versioned) and set `resource` in the source page frontmatter to that exact path.
 
 During **SETUP step 5b** (DocMind pre-scan): search for documents related to the seed entities/concepts. For each relevant document, perform the mechanical ingest pre-pass only (fetch, versioning check, create `wiki/sources/<slug>.md`). **Do not** run INGEST's user discussion step during SETUP. Skip 5b entirely if DocMind is unavailable.
 
@@ -22,7 +22,7 @@ During **SETUP step 5b** (DocMind pre-scan): search for documents related to the
 
 In enhanced mode, QUERY uses `searchFlavorChunks(project, question, mode=hybrid)` to identify relevant pages, in addition to or instead of reading `wiki/index.md`.
 
-If a DocMind document from **any** project is fetched and used in the answer, ask the user whether it should also be registered as a source in the wiki. Only if the user agrees, treat it as an ingested source: apply the versioning check, create `wiki/sources/<source-slug>.md`, set `source_file` to that exact raw path, and add it to `wiki/index.md`.
+If a DocMind document from **any** project is fetched and used in the answer, ask the user whether it should also be registered as a source in the wiki. Only if the user agrees, treat it as an ingested source: apply the versioning check, create `wiki/sources/<source-slug>.md`, set `resource` to that exact raw path, and regenerate `wiki/index.md` with `wiki_index.py --write`.
 
 ---
 
@@ -65,10 +65,11 @@ When a DocMind spec reaches `SPEC_DONE`, snapshot its final content to `raw/spec
 
 ```markdown
 ---
+type: source
 title: "Spec: <displayName>"
-category: source
 tags: [spec, <spec.tags...>]
-source_file: raw/spec-<uniqueName>.md
+resource: raw/spec-<uniqueName>.md
+status: stable
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
 docmind_spec:
@@ -128,7 +129,11 @@ DocMind specs are work items with a formal lifecycle (DRAFT → REVIEW → APPRO
 4. `stageDraft(content=<markdown>, kind="spec")` → obtain `draftId`.
 5. `spec_create(project, uniqueName, displayName, description, contentRef=draftId, acceptanceCriteria, priority, tags, blockedBy?)`.
 6. **Wiki compounding**: add or update `## Related Specs` on every entity/concept touched by the spec.
-7. Append to `log.md`: `## [YYYY-MM-DD] spec-created | <uniqueName> — <displayName>`.
+7. Append a log entry (never by hand):
+   ```bash
+   python3 $HOME/.agents/skills/llm-wiki-manager/scripts/wiki_log.py <wiki-root> append \
+     --op spec-created --title "<uniqueName>" --note "<displayName>"
+   ```
 
 **Critical rule**: the spec body must **not** include long-lived architectural decisions. Those stay in the wiki. The spec links the wiki; it does not copy it.
 
@@ -164,7 +169,7 @@ Steps (after confirmation):
    - `## Related Specs` → status `SPEC_DONE`.
    - `## Tech Stack / Key Properties` if the spec added system capabilities.
 5. Update concept pages if general patterns emerged.
-6. Update `wiki/index.md` (Sources table) + `wiki/log.md` (`## [YYYY-MM-DD] spec-done | <uniqueName> — <displayName>`).
+6. Update `wiki/index.md` (regenerate with `wiki_index.py --write`) and append a `spec-done` log entry via `wiki_log.py`.
 7. Propose `PROMOTE` if the knowledge is clearly cross-project (Layer 5).
 
 **Expected output**: 1 raw snapshot, 1 source page, N entity/concept updates, index + log updated.
@@ -207,7 +212,7 @@ Full LINT reports "Promotion Candidates" for pages that meet the threshold but l
      lastPushedAt: YYYY-MM-DD
    ```
 
-5. Append to `wiki/log.md`: `## [YYYY-MM-DD] promote | <wiki-path> → <promote_target>/<uniqueName>`.
+5. Append a `promote` log entry via `wiki_log.py` (`--op promote --title "<wiki-path>" --note "<promote_target>/<uniqueName>"`).
 
 If `uploadDocument` fails, do **not** write `docmind_mirror`. Report the error for a manual retry.
 

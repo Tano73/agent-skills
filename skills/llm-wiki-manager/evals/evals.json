@@ -18,12 +18,12 @@
     {
       "id": 1,
       "prompt": "Leggi questo documento e aggiungilo al wiki:\n\n# Kubernetes Operators\n\nUn Kubernetes Operator e un pattern software che estende Kubernetes con logica di gestione specifica per un'applicazione. Usa le Custom Resource Definitions (CRD) per rappresentare lo stato desiderato dell'applicazione e un controller loop per riconciliare lo stato attuale con quello desiderato.\n\n## Vantaggi principali\n\n- Automazione di Day-2 operations (backup, failover, upgrade)\n- Codifica dell'expertise operativo in software\n- Self-healing: il controller reagisce automaticamente ai guasti\n\n## Svantaggi\n\n- Complessita di sviluppo: servono Go e Kubebuilder/Operator SDK\n- Debug difficile: il controller loop e asincrono\n- Operator maturity varia molto (livelli 1-5 di OperatorHub)\n\n## Strumenti\n\n- Kubebuilder: framework ufficiale CNCF\n- Operator SDK: alternativa di Red Hat, include supporto Ansible e Helm\n- controller-runtime: libreria Go che implementa il controller loop",
-      "expected_output": "The skill first proposes or confirms a filename under raw/ for the pasted content, applies the versioning check if that raw file already exists, saves the content in raw/, and then ingests the document. It creates wiki/sources/<source-slug>.md with title, source_file pointing to the exact raw file used, summary, key takeaways, and links. It creates or updates wiki/entities/ pages for Kubernetes Operators, Kubebuilder, Operator SDK, and controller-runtime. It creates or updates wiki/concepts/ pages for patterns like CRD, controller loop, Day-2 operations, and self-healing. It updates wiki/index.md and wiki/log.md, and reports a list of all pages created or modified.",
+      "expected_output": "The skill first proposes or confirms a filename under raw/ for the pasted content, applies the versioning check if that raw file already exists, saves the content in raw/, and then ingests the document. It creates wiki/sources/<source-slug>.md with title, resource pointing to the exact raw file used, summary, key takeaways, and links. It creates or updates wiki/entities/ pages for Kubernetes Operators, Kubebuilder, Operator SDK, and controller-runtime. It creates or updates wiki/concepts/ pages for patterns like CRD, controller loop, Day-2 operations, and self-healing. It regenerates wiki/index.md with wiki_index.py --write, appends a log entry to wiki/log.md with wiki_log.py, and reports a list of all pages created or modified.",
       "files": [],
       "expectations": [
         "The response proposes or confirms a candidate filename under raw/ before writing the pasted content.",
         "The response applies the raw/ versioning check before ingestion continues.",
-        "The source page is described with source_file pointing to the exact raw file used.",
+        "The source page is described with resource pointing to the exact raw file used.",
         "The response creates or updates both entity pages and concept pages touched by the document.",
         "The response updates wiki/index.md and wiki/log.md and reports the touched pages."
       ]
@@ -31,13 +31,14 @@
     {
       "id": 2,
       "prompt": "Cosa sai di Kubernetes Operators e come si differenziano da un semplice Deployment? Fornisci un confronto.",
-      "expected_output": "The skill reads wiki/index.md, identifies the relevant pages within a bounded read budget, and synthesizes a comparative answer as a Markdown table comparing Operator vs Deployment on dimensions like lifecycle management, automation, complexity, and use cases. The answer includes citations with relative links to wiki pages and asks whether the user wants to save the answer as a wiki page.",
+      "expected_output": "The skill runs the bundled search script wiki_search.py on the wiki root (or an equivalent token-cheap search) instead of reading whole pages, identifies the relevant pages within a bounded read budget, and synthesizes a comparative answer as a Markdown table comparing Operator vs Deployment on dimensions like lifecycle management, automation, complexity, and use cases. The answer includes citations with relative links to wiki pages and asks whether the user wants to save the answer as a wiki page. If the wiki is empty or thin, it says so and offers DocMind search as a next step instead of padding the answer with general knowledge.",
       "files": [],
       "expectations": [
         "The answer format is a Markdown table, not plain prose only.",
         "The answer cites existing wiki pages using relative Markdown links.",
         "The comparison covers multiple dimensions such as lifecycle management, automation, complexity, or use cases.",
-        "The response asks whether the answer should be saved as a wiki page."
+        "The response asks whether the answer should be saved as a wiki page.",
+        "The response searches the wiki with the bundled script rather than reading all pages in full."
       ]
     },
     {
@@ -78,22 +79,23 @@
     {
       "id": 6,
       "prompt": "Se DocMind e disponibile e contiene un documento rilevante su Kubernetes Operators, cercalo e aggiungilo al wiki come sorgente.",
-      "expected_output": "This eval is intended only for environments where DocMind MCP tools are available and at least one relevant document can be found. In that case, the skill uses DocMind search or fetch to retrieve the document, derives a candidate filename in raw/, applies the same versioning check used for every other source, reuses the raw file if it is identical or saves a new file/version if needed, creates wiki/sources/<source-slug>.md with source_file pointing to the exact raw file used, updates wiki/index.md and wiki/log.md, and reports the affected pages. If DocMind is unavailable, the skill says so and does not invent a fetch.",
+      "expected_output": "This eval is intended only for environments where DocMind MCP tools are available and at least one relevant document can be found. In that case, the skill uses DocMind search or fetch to retrieve the document, derives a candidate filename in raw/, applies the same versioning check used for every other source, reuses the raw file if it is identical or saves a new file/version if needed, creates wiki/sources/<source-slug>.md with resource pointing to the exact raw file used, regenerates wiki/index.md with wiki_index.py --write, appends a wiki_log.py entry, and reports the affected pages. If DocMind is unavailable, the skill says so and does not invent a fetch.",
       "files": [],
       "expectations": [
         "If DocMind tools are unavailable, the response says so and does not pretend to have fetched a document.",
         "If DocMind is available, the response uses a DocMind search or fetch step before ingestion.",
         "If DocMind is available, the response applies the standard raw/ versioning check before writing any file.",
-        "If DocMind is available, the fetched content is stored in raw/ and the resulting source page uses source_file pointing to that exact raw file."
+        "If DocMind is available, the fetched content is stored in raw/ and the resulting source page uses resource pointing to that exact raw file."
       ]
     },
     {
       "id": 7,
       "prompt": "Fai un lint della wiki e dimmi cosa non va.",
-      "expected_output": "The skill runs wiki_lint.py on the wiki root, merges the mechanical findings with any semantic checks it performs, presents a structured lint report (dangling sources, broken links, orphans, index gaps, etc.), asks which items to fix, and appends a lint entry to wiki/log.md.",
+      "expected_output": "The skill runs wiki_lint.py and wiki_index.py --check on the wiki root, merges the mechanical findings with any semantic checks it performs, presents a structured lint report (dangling sources, broken links, orphans, index drift, missing provenance, etc.), asks which items to fix, and appends a lint entry to wiki/log.md via wiki_log.py.",
       "files": [],
       "expectations": [
         "The response runs wiki_lint.py (or clearly cites its output) rather than only hand-waving a manual walk.",
+        "The response checks index drift (wiki_index.py --check) and does not hand-repair the index.",
         "The response presents a structured report with severity categories.",
         "The response asks which findings to fix, instead of silently rewriting the whole wiki.",
         "The response appends or proposes a lint entry in wiki/log.md."
@@ -131,6 +133,18 @@
         "The response lists the files that would be created or modified (or equivalent preview).",
         "The response does not claim the compound completed successfully without that confirmation.",
         "If DocMind tools are unavailable, the response says so instead of fabricating a compound."
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Cerca nella knowledge base tutto cio che riguarda OIDC e come lo usiamo. Rispondi citando sempre le fonti.",
+      "expected_output": "The skill follows the extraction pipeline: it first runs wiki_search.py on the wiki root and cites the matching pages with relative links; if the wiki is insufficient it moves to DocMind hybrid search (searchFlavorChunks with rephrase/retry) and cites the retrieved documents; if a repository is known it may search its GitHub issues and cite them; it only considers a web or model-knowledge fallback after explicitly asking the user permission. The answer ends with a Sources section listing every wiki page, DocMind document, and GitHub issue used, and it does not present un-cited general knowledge as a KB answer.",
+      "files": [],
+      "expectations": [
+        "The response starts from a wiki search (script-driven) rather than immediately using general knowledge.",
+        "Every key claim carries an inline citation (wiki page, DocMind document, or GitHub issue).",
+        "The response ends with a Sources section.",
+        "The response does not silently fall back to web or model knowledge without explicit user permission."
       ]
     }
   ]

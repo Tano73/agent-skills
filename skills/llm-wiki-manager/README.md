@@ -2,7 +2,7 @@
 
 Una skill per Cursor/Claude che mantiene una **knowledge base markdown locale, persistente e in continua crescita**, e si integra con il MCP **DocMind** per ricerca semantica cross-progetto, workflow di spec e condivisione di team.
 
-> **Per gli agenti**: il manuale operativo (cosa fa l'agente passo-passo) è in `SKILL.md`. Questo README è invece per te, l'utente umano: cosa puoi chiedere, come usarla, esempi pratici.
+> **Per gli agenti**: la sequenza operativa è in `SKILL.md` (navigatore) più i dettagli per operazione in `references/*.md` (setup-ingest, query, lint, docmind, okf). I task deterministici (index, log, versioning, lint, ricerca) sono delegati agli script in `scripts/`. Questo README è invece per te, l'utente umano: cosa puoi chiedere, come usarla, esempi pratici.
 
 ---
 
@@ -108,7 +108,7 @@ Ogni volta che l'agente impara qualcosa di nuovo (ingerendo un documento, rispon
    - Ti fa un'intervista breve sul dominio (quali sono le entity principali, i concept chiave).
    - Se DocMind è disponibile, fa un pre-scan dei progetti DocMind per trovare documenti rilevanti e li ingerisce automaticamente.
    - Crea la struttura completa con pagine seed già linkate tra loro.
-   - Esegue un lint meccanico locale (`scripts/wiki_lint.py`).
+   - Rigenera `wiki/index.md` con `wiki_index.py --write`, registra l'evento `setup` in `wiki/log.md` con `wiki_log.py`, ed esegue un lint meccanico locale (`scripts/wiki_lint.py`).
    - **Git smart, con conferma**: se la cartella è già in un repo git, propone un commit nel repo padre; altrimenti propone `git init` + commit. **Non esegue `git commit` senza un sì esplicito.**
 
 4. **Aggiungi il binding DocMind** all'`AGENTS.md` generato (sezione `## DocMind Binding`):
@@ -278,11 +278,13 @@ Le risposte salvate **compongono come quelle ingerite**: niente differenza tra "
 
 **Quando**: ogni tanto (settimanalmente / dopo molte ingest). Fa pulizia.
 
-I check meccanici (link rotti, source dangling, `source_file` mancanti, pagine fuori da `index.md`, orphan, pagine senza link in uscita) sono eseguiti dallo script bundled:
+I check meccanici (link rotti, source dangling, provenance `resource`/`source_file` mancante, campo OKF `type` assente, `status` non valido, `stale_after` scaduto, pagine fuori da `index.md`, orphan, pagine senza link in uscita) sono eseguiti dallo script bundled:
 
 ```bash
 python3 $HOME/.agents/skills/llm-wiki-manager/scripts/wiki_lint.py "<wiki-root>"
 ```
+
+`wiki_index.py "<wiki-root>" --check` segnala l'index drift (indice non più aggiornato rispetto alle pagine); si rigenera con `--write`. Non ripariare mai l'indice a mano.
 
 L'agente interpreta l'output, aggiunge i check semantici e produce il report unificato.
 
@@ -460,13 +462,18 @@ Tutto funziona in **local-only mode**. SETUP/INGEST/QUERY/LINT (parte locale)/SP
 
 ```yaml
 ---
+type: entity | concept | source | overview
 title: "Page Title"
-category: entity | concept | source | overview
+description: "One-line summary"
 tags: [tag1, tag2]
-sources: [source-slug-1]
+status: stable          # draft | stable | deprecated (assente => stable)
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
-# Opzionale, solo se la pagina è stata promossa su DocMind:
+# Opzionale, famiglie deliberate (vedi references/okf.md):
+# sources: [source-slug-1]
+# verified: { by: human:<id>, at: YYYY-MM-DD }
+# stale_after: YYYY-MM-DD
+# Solo se la pagina è stata promossa su DocMind:
 docmind_mirror:
   project: <docmind-project>
   uniqueName: <docmind-flavor-unique-name>
@@ -474,15 +481,20 @@ docmind_mirror:
 ---
 ```
 
+`type` è l'unico campo REQUIRED (OKF v0.2). Legacy alias accettati in lettura:
+`category`→`type`, `source_file`→`resource`.
+
 ### Cosa NON modificare a mano
 
 - **`raw/`**: tutto immutabile. Le source originali non si toccano mai. Se serve una versione nuova, la skill crea `<slug>-v2.md` accanto all'originale.
 - **`raw/spec-<uniqueName>.md`**: anche gli snapshot di spec DONE sono immutabili.
+- **`wiki/index.md`**: catalogo generato da `wiki_index.py` — le modifiche a mano verrebbero sovrascritte.
+- **`wiki/log.md`**: storico mantenuto da `wiki_log.py` (format OKF, piu-recente-in-alto) — non spostare gli heading `## YYYY-MM-DD`.
 
 ### Cosa puoi tranquillamente modificare a mano
 
 - Tutte le pagine in `wiki/entities/`, `wiki/concepts/`: vivono e crescono.
-- `wiki/index.md`, `wiki/log.md`, `wiki/overview.md`: puoi correggere refusi.
+- `wiki/overview.md`: è il tuo punto di dialogo con la knowledge base.
 - `AGENTS.md`: è il manuale di questa wiki specifica, va aggiornato quando le convenzioni evolvono.
 
 ### Promotion threshold (per pagine entity/concept ↔ DocMind)
@@ -644,7 +656,12 @@ cp SKILL.md.bak-<scegli> SKILL.md
 
 ## Approfondimenti
 
-- **Manuale operativo per l'agente**: [`SKILL.md`](SKILL.md) — leggilo se vuoi capire **esattamente** cosa fa l'agente in ogni step.
+- **Navigatore operativo per l'agente**: [`SKILL.md`](SKILL.md) — script, invarianti, mappa delle operazioni; i dettagli step-by-step stanno in `references/`.
+- **Contratto strutturale OKF**: [`references/okf.md`](references/okf.md) — lo standard a cui le pagine si conformano: frontmatter, trust/lifecycle, template, format di `index.md`/`log.md`.
+- **Workflow di scrittura**: [`references/setup-ingest.md`](references/setup-ingest.md) — SETUP e INGEST passo-passo, con le regole di ingestione in `raw/` (`raw_check.py`).
+- **Workflow di estrazione**: [`references/query.md`](references/query.md) — come risponde ai tuoi quesiti: wiki → DocMind → GitHub issues → fallback solo con permesso.
+- **Workflow di audit**: [`references/lint.md`](references/lint.md) — check meccanici + semantici, report, fix loop.
+- **Integrazione DocMind**: [`references/docmind.md`](references/docmind.md) — SPEC-DRAFT/COMPOUND, PROMOTE, ingest DocMind, binding nel wiki root.
 - **Background concettuale**: [`references/llm-wiki-karpathy.md`](references/llm-wiki-karpathy.md) — il post originale di Andrej Karpathy sul pattern LLM wiki: i tre layer (raw / wiki / schema), le operazioni, la filosofia.
 - **Esempio di wiki reale**: una wiki ben tenuta vive in qualche progetto privato; chiedi all'agente *"mostrami un esempio di entity page ben strutturata"* per vedere il template applicato.
 

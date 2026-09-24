@@ -12,7 +12,7 @@ Markdown + YAML frontmatter as the primary content format. Supporting Python scr
 
 ## Conventions
 
-kebab-case file names; each skill's `SKILL.md` is its behavioral contract; the frontmatter conventions for wiki pages are defined inside `llm-wiki-manager`'s `SKILL.md`.
+kebab-case file names; each skill's `SKILL.md` is its behavioral contract; the frontmatter conventions for `llm-wiki-manager` wiki pages are defined in its `references/okf.md`.
 
 ## Sanity Checks
 
@@ -24,9 +24,9 @@ No broader automated test suite is known in this repo beyond the mechanical chec
 
 ## Key Files
 
-- `skills/llm-wiki-manager/SKILL.md` — operating manual and page/frontmatter conventions
-- `skills/llm-wiki-manager/scripts/wiki_lint.py` — mechanical validation script
-- `skills/llm-wiki-manager/references/` — on-demand reference docs (Karpathy pattern, DocMind integration)
+- `skills/llm-wiki-manager/SKILL.md` — operating manual (navigator: scripts, invariants, operation map)
+- `skills/llm-wiki-manager/references/` — on-demand reference docs (okf, setup-ingest, query, lint, docmind, Karpathy pattern)
+- `skills/llm-wiki-manager/scripts/` — deterministic helpers (index, log, raw-check, search, lint)
 
 ## Hard Rules
 
