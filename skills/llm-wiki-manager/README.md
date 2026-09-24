@@ -11,7 +11,7 @@ Una skill per Cursor/Claude che mantiene una **knowledge base markdown locale, p
 1. [A cosa serve](#a-cosa-serve)
 2. [Setup in 3 minuti](#setup-in-3-minuti)
 3. [Wiki dentro un progetto esistente](#wiki-dentro-un-progetto-esistente)
-4. [Le 7 operazioni che puoi chiedere](#le-7-operazioni-che-puoi-chiedere)
+4. [Le 8 operazioni che puoi chiedere](#le-8-operazioni-che-puoi-chiedere)
 5. [Integrazione DocMind](#integrazione-docmind)
 6. [Convenzioni di base](#convenzioni-di-base)
 7. [Esempio: una settimana di sviluppo](#esempio-una-settimana-di-sviluppo)
@@ -200,7 +200,7 @@ Niente. INGEST, QUERY, LINT, SPEC-DRAFT, SPEC-COMPOUND, PROMOTE funzionano ident
 
 ---
 
-## Le 7 operazioni che puoi chiedere
+## Le 8 operazioni che puoi chiedere
 
 L'agente sceglie automaticamente l'operazione giusta in base a cosa dici. Ecco la tabella di riferimento.
 
@@ -209,6 +209,7 @@ L'agente sceglie automaticamente l'operazione giusta in base a cosa dici. Ecco l
 | **SETUP** | Inizializza la wiki da zero | "setup", "crea wiki", "inizializza" |
 | **INGEST** | Aggiunge un documento alla knowledge base | path di file in `raw/`, "ingerisci", "aggiungi", "processa", "leggi questo" |
 | **QUERY** | Risponde a una domanda usando la wiki | "dimmi cosa sai di X", "come funziona Y", "cerca X" |
+| **SYNC** | Allinea la wiki ai cambi implementativi reali | "sync", "sincronizza il wiki", "aggiorna il wiki ai cambi" |
 | **LINT** | Audit della wiki (link rotti, pagine orfane, drift) | "lint", "controlla", "audit", "verifica il wiki" |
 | **SPEC-DRAFT** | Crea una spec DocMind attingendo dalla wiki | "crea una spec per X", "nuova feature", "draft a spec" |
 | **SPEC-COMPOUND** | Quando una spec DocMind va in DONE, porta il sapere maturato nella wiki | automatico su `spec_transition → SPEC_DONE`, oppure "esegui spec-compound per X" |
@@ -273,6 +274,20 @@ L'agente sceglie automaticamente l'operazione giusta in base a cosa dici. Ecco l
 Le risposte salvate **compongono come quelle ingerite**: niente differenza tra "ho letto un articolo" e "ho ragionato a partire dalla wiki".
 
 **Con DocMind**: se la wiki non basta, l'agente fa `searchFlavorChunks` automaticamente, e ti propone di ingerire la fonte trovata.
+
+### SYNC
+
+**Quando**: dopo ogni implementazione o merge che cambia comportamento, API, configurazione, tech stack o decisioni tecniche. È il passo che tiene la wiki **allineata a quello che il codice fa davvero**, non a quando è stata ingerita.
+
+**Cosa succede**:
+1. `wiki_sync.py <wiki-root>` raccoglie i commit e i file cambiati dall'ultimo marker (`wiki/.sync-marker`), escludendo `raw/`, `wiki/`, `.walden/`, `docs/`.
+2. L'agente mappa i file cambiati alle pagine toccate e aggiorna solo la conoscenza **durabile** (Key Decisions, Tech Stack, pattern, API/config rilevanti — il 6-month test). Dettagli volatili: restano nel codice.
+3. Regola d'oro: le pagine con `verified: human:` vengono **mostrate come diff e modificate solo dopo il tuo sì**. Quelle senza `verified:` si aggiornano direttamente.
+4. Aggiorna `overview.md`, rigenera `index.md`, sposta il marker a HEAD, aggiunge la voce `sync` in `log.md`.
+
+**Perfetto con l'automazione**: aggiungi la clausola nel `## Wiki sync` alla tua `AGENTS.md` di progetto (vedi [`references/sync.md`](references/sync.md)) e il sync diventa l'ultimo step automatico di ogni implementazione.
+
+**Prima run**: il primo giro stabilisce il baseline (`--write-marker`) senza toccare pagine; i giro successivi riportano solo i cambi reali.
 
 ### LINT
 
@@ -616,7 +631,7 @@ Nessun limite hard. Karpathy nel doc originale parla di wiki personali con centi
 
 ### "L'agente non riconosce il trigger"
 
-Verifica di aver detto qualcosa di abbastanza vicino ai trigger noti (vedi tabella in [Le 7 operazioni](#le-7-operazioni-che-puoi-chiedere)). Se sei in dubbio, dì esplicitamente *"esegui INGEST"* / *"esegui QUERY"* / ecc.
+Verifica di aver detto qualcosa di abbastanza vicino ai trigger noti (vedi tabella in [Le 8 operazioni](#le-8-operazioni-che-puoi-chiedere)). Se sei in dubbio, dì esplicitamente *"esegui INGEST"* / *"esegui QUERY"* / ecc.
 
 ### "L'agente sta per scrivere troppi file"
 
@@ -661,6 +676,7 @@ cp SKILL.md.bak-<scegli> SKILL.md
 - **Workflow di scrittura**: [`references/setup-ingest.md`](references/setup-ingest.md) — SETUP e INGEST passo-passo, con le regole di ingestione in `raw/` (`raw_check.py`).
 - **Workflow di estrazione**: [`references/query.md`](references/query.md) — come risponde ai tuoi quesiti: wiki → DocMind → GitHub issues → fallback solo con permesso.
 - **Workflow di audit**: [`references/lint.md`](references/lint.md) — check meccanici + semantici, report, fix loop.
+- **Workflow di sync**: [`references/sync.md`](references/sync.md) — allineamento alla implementazione reale: diff-driven, gate sulle pagine verificate, hook per l'`AGENTS.md` di progetto.
 - **Integrazione DocMind**: [`references/docmind.md`](references/docmind.md) — SPEC-DRAFT/COMPOUND, PROMOTE, ingest DocMind, binding nel wiki root.
 - **Background concettuale**: [`references/llm-wiki-karpathy.md`](references/llm-wiki-karpathy.md) — il post originale di Andrej Karpathy sul pattern LLM wiki: i tre layer (raw / wiki / schema), le operazioni, la filosofia.
 - **Esempio di wiki reale**: una wiki ben tenuta vive in qualche progetto privato; chiedi all'agente *"mostrami un esempio di entity page ben strutturata"* per vedere il template applicato.
@@ -673,6 +689,7 @@ cp SKILL.md.bak-<scegli> SKILL.md
 SETUP            "crea una wiki per <dominio>"
 INGEST           "ingerisci <file/path/DocMind name>"
 QUERY            "dimmi cosa sai di <X>"
+SYNC             "sync il wiki" (ultimo step di ogni implementazione/merge)
 LINT             "lint" (veloce) / "lint completo" (con DocMind)
 SPEC-DRAFT       "crea una spec per <task>"
 SPEC-COMPOUND    automatico su SPEC_DONE; manual: "esegui spec-compound per <uniqueName>"
@@ -682,6 +699,8 @@ REGOLE D'ORO:
 - 6 mesi rule: ha senso fra 6 mesi? → wiki, no? → spec
 - Trans-progetto? → DocMind, project? → wiki
 - Stato volatile? → solo DocMind
+- Dopo un'implementazione/merge → SYNC
+- Pagine verified → mai sovrascritte senza il tuo sì
 - raw/ è IMMUTABILE — non si tocca mai
 
 PAGE TYPES:

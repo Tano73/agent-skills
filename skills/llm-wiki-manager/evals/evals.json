@@ -146,6 +146,29 @@
         "The response ends with a Sources section.",
         "The response does not silently fall back to web or model knowledge without explicit user permission."
       ]
+    },
+    {
+      "id": 12,
+      "prompt": "Ho appena modificato il servizio di provisioning nella nostra app (gestione utenti da LDAP a SCIM): aggiorna il wiki con le ultime implementazioni.",
+      "expected_output": "The skill runs the SYNC workflow: it gathers the implementation changes with wiki_sync.py (commits and changed file paths since the marker, excluding raw/, wiki/, .walden/, docs/), maps the changed files to the affected wiki pages, updates only durable knowledge (Key Decisions, Tech Stack, API/config that matters — the 6-month test), skips one-off detail, regenerates the index with wiki_index.py --write, advances the marker with wiki_sync.py --write-marker, and appends a sync entry to wiki/log.md via wiki_log.py. Pages with verified: human: frontmatter are shown as a diff and changed only after explicit user confirmation; pages without verified are updated directly.",
+      "files": [],
+      "expectations": [
+        "The response collects the change via wiki_sync.py instead of describing changes from memory.",
+        "The response updates only durable knowledge (decisions, stack, patterns), not throwaway implementation detail.",
+        "Pages with verified: human: are proposed as a diff and modified only after user confirmation.",
+        "The response regenerates the index, advances the marker, and appends a sync log entry."
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "La cartella /tmp/not-a-git-repo contiene solo il wiki ma non e un repository git. Sincronizza il wiki con i cambi dell'implementazione.",
+      "expected_output": "Negative/edge case: the skill runs wiki_sync.py, detects there is no git repository (or no commits), says SYNC is not applicable, and does not invent a diff, forge changes, or write pages.",
+      "files": [],
+      "expectations": [
+        "The response reports that no git repository (or no commits) was found.",
+        "The response does not fabricate implementation changes or edit pages without a real diff.",
+        "The response offers an alternative such as manual INGEST or setting up git."
+      ]
     }
   ]
 }

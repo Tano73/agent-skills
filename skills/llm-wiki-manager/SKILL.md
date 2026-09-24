@@ -36,6 +36,7 @@ All under `$HOME/.agents/skills/llm-wiki-manager/scripts/`:
 | `wiki_log.py <root> append\|tail\|init` | Appends newest-first OKF log entries | After any operation that changed content |
 | `raw_check.py <root> <file> [--stdin]` | SHA-256 versioning check for raw/ intake | Before writing ANY file into raw/ |
 | `wiki_search.py <root> <words...>` | Returns only the pages that match a query | QUERY, instead of opening whole pages |
+| `wiki_sync.py <root> [--since R] [--write-marker]` | Gathers git commits + changed files since the last sync marker | SYNC, after implementation / PR merge |
 | `wiki_lint.py <root> [--json] [--strict]` | Structural + OKF health checks | LINT; after SETUP |
 
 ## References (load on demand)
@@ -47,6 +48,7 @@ All under `$HOME/.agents/skills/llm-wiki-manager/scripts/`:
 | `references/setup-ingest.md` | Running SETUP or INGEST — step-by-step, incl. `raw_check.py` intake rules |
 | `references/query.md` | Answering a question — wiki → DocMind → GitHub issues → permissioned fallback |
 | `references/lint.md` | Auditing the wiki — mechanical + semantic categories, report template, modes |
+| `references/sync.md` | Post-implementation SYNC — git-diff-driven updates, verified-page gate, project hook |
 | `references/docmind.md` | DocMind is available and the operation touches it (SPEC-DRAFT/COMPOUND, PROMOTE, DocMind ingest, full LINT) |
 
 Do not read every reference upfront. Read the one for the operation you are about to
@@ -75,7 +77,10 @@ run, and `okf.md` before you create or edit a page.
    ships without those.
 7. **Every entity → ≥1 entity and ≥1 concept; every concept → ≥1 entity.** No naked
    mentions of pages that exist. Promote threshold: a term in 2+ pages gets its own page.
-8. **Schema grows.** `AGENTS.md` at the wiki root is the wiki's operating manual —
+8. **Never silently overwrite human-reviewed content.** SYNC updates pages without
+   `verified:` directly; for pages with `verified: human:` it proposes the diff and
+   waits for confirmation. raw/ is immutable anyway.
+9. **Schema grows.** `AGENTS.md` at the wiki root is the wiki's operating manual —
    propose a concrete update when conventions stop fitting (see Schema Evolution).
 
 ---
@@ -120,6 +125,7 @@ and `raw/`.
 | **SETUP** | setup, inizializza, crea wiki, crea una nuova wiki | `setup-ingest.md` + `okf.md` |
 | **INGEST** | file path under `raw/`, pasted content, "ingest", "aggiungi", "processa", "leggi questo" | `setup-ingest.md` + `okf.md` |
 | **QUERY** | a question: "query", "dimmi", "cosa sai di", "come funziona", comparison, summary | `query.md` |
+| **SYNC** | post-implementation / post-merge: "sync", "sincronizza il wiki", "aggiorna il wiki ai cambi" | `sync.md` |
 | **LINT** | lint, controlla, audit, health check, verifica il wiki | `lint.md` |
 | **SPEC-DRAFT / SPEC-COMPOUND / PROMOTE** | "crea una spec", spec-compound, promuovi, pubblica su DocMind | `docmind.md` |
 
