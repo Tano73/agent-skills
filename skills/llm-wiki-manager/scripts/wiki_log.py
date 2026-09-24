@@ -15,8 +15,8 @@ Usage:
 entry under it, keeping date sections sorted newest-first. `tail` prints the
 most recent entries. `init` creates an empty log file (used by SETUP).
 
-Action words (`--op`): setup, ingest, query, lint, spec-created, spec-done,
-promote.
+Action words (`--op`): setup, ingest, query, lint, sync, spec-created,
+spec-done, promote.
 
 Exit codes:
     0 — ok
@@ -35,7 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import wiki_lib
 
 DATE_RE = re.compile(r"^##\s+(\d{4}-\d{2}-\d{2})\s*$")
-OPS = ("setup", "ingest", "query", "lint", "spec-created", "spec-done", "promote")
+OPS = ("setup", "ingest", "query", "lint", "sync", "spec-created", "spec-done", "promote")
 DATE_OKF_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
