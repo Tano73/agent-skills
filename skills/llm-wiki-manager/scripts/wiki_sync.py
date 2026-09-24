@@ -25,9 +25,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-EXCLUDED_PREFIXES = (
-    "raw/",
-    "wiki/",
+# Repo-root-wide directories that never carry the implementation signal. The
+# wiki bundle paths (raw/, wiki/) are NOT here: they are added dynamically from
+# the wiki root (see wiki_excludes), so a bundle under <repo>/knowledge/ hides
+# knowledge/raw and knowledge/wiki, not a nonexistent repo-root wiki/raw.
+GLOBAL_EXCLUDED_PREFIXES = (
     ".walden/",
     ".git/",
     "docs/",
@@ -88,9 +90,30 @@ def resolve_base(repo, since):
     return since, since
 
 
-def changed_paths(repo, base, head):
+def wiki_excludes(repo, wiki_root):
+    """Repo-relative prefixes to hide from the implementation signal.
+
+    The wiki bundle's own content is <wiki_root>/raw and <wiki_root>/wiki.
+    Exclude those two relative to the repo (so a wiki under <repo>/knowledge/
+    hides knowledge/raw and knowledge/wiki), plus the repo-wide dirs in
+    GLOBAL_EXCLUDED_PREFIXES. Falls back to the global set when the wiki root
+    is outside the repo.
+    """
+    excluded = list(GLOBAL_EXCLUDED_PREFIXES)
+    try:
+        rel = wiki_root.resolve().relative_to(repo)
+    except ValueError:
+        return tuple(excluded)
+    if str(rel) == ".":
+        excluded += ("wiki/", "raw/")
+    else:
+        excluded += (f"{rel}/wiki/", f"{rel}/raw/")
+    return tuple(excluded)
+
+
+def changed_paths(repo, base, head, excluded):
     """List changed file paths between `since` and HEAD, filtered to code/doc
-    paths that matter for the wiki (knowledge and walden paths excluded)."""
+    paths that matter for the wiki (wiki bundle, walden and docs excluded)."""
     diff = git_output(repo, ["diff", "--name-only", base, head])
     if diff is None:
         return []
@@ -99,7 +122,7 @@ def changed_paths(repo, base, head):
         rel = line.strip()
         if not rel:
             continue
-        if any(rel.startswith(prefix) for prefix in EXCLUDED_PREFIXES):
+        if any(rel.startswith(prefix) for prefix in excluded):
             continue
         paths.append(rel)
     return sorted(set(paths))
@@ -134,6 +157,8 @@ def main(argv=None):
         print("INFO: no git repository found (checked up the tree from %s)." % root)
         print("INFO: SYNC needs a git repo; fall back to manual INGEST.")
         return 1
+
+    excluded = wiki_excludes(repo, root)
 
     head = git_output(repo, ["rev-parse", "HEAD"])
     if not head:
@@ -178,7 +203,7 @@ def main(argv=None):
                 if len(commits) >= args.max_commits:
                     break
 
-    files = changed_paths(repo, base, head)
+    files = changed_paths(repo, base, head, excluded)
 
     stats = git_output(repo, ["rev-list", "--count", f"{base}..HEAD"])
     total_commits = int(stats) if stats and stats.isdigit() else len(commits)
@@ -215,7 +240,7 @@ def main(argv=None):
         print(f"commits       : {total_commits} since {since}")
         for c in result["commits"]:
             print(f"  {c['sha']}  {c['date']}  {c['subject']}")
-        print(f"changed files : {len(files)} (raw/, wiki/, .walden/, docs/ excluded)")
+        print(f"changed files : {len(files)} ({', '.join(excluded)} excluded)")
         for f in files:
             print(f"  {f}")
         if marker_written:

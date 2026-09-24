@@ -63,17 +63,41 @@ diff — fall back to manual INGEST or just say SYNC is not applicable here.
 
 ---
 
-## Step 2 — Map changed files → wiki pages
+## Step 2 — Map changed files → wiki pages AND cross-check content
 
-Read the changed paths and infer which entity/concept pages are affected (match
-basenames, service/component names, and domain nouns against page slugs, titles,
-tags, descriptions). If unsure, confirm candidates with a quick search:
+Read the changed paths (the non-wiki signal the script now isolates) and infer
+which entity/concept pages are affected (match basenames, service/component
+names, and domain nouns against page slugs, titles, tags, descriptions). If
+unsure, confirm candidates with a quick search:
 
 ```bash
 python3 $HOME/.agents/skills/llm-wiki-manager/scripts/wiki_search.py <wiki-root> <terms...>
 ```
 
 Read only the 1–3 pages you judge affected. Do not open the whole wiki.
+
+**Mandatory cross-check — this is the point of SYNC.** For each changed
+implementation/config file, do not just map it to a page: open BOTH the file's
+current content AND the wiki page, and compare the durable claims (versions,
+tags, paths, flags, topology) against the actual values on disk. A git diff
+only shows *what moved in this window* — it cannot tell you whether the wiki
+matches the code *in that same commit*, because the wiki edit and the code edit
+may have landed together and contradict each other (a real failure mode seen in
+practice: a commit bumped a tag to `X` in `values.yaml` while the very wiki
+page it touched still claimed "resta `X-1`, non ancora allineati").
+
+Anti-patterns for the cross-check:
+- **Never trust a log.md entry as proof of alignment.** Logs record operations
+  ("Aggiornato values.yaml"), not page state. Check the page, not the log.
+- **Never infer "already documented" from the presence of a value on the page.**
+  `26.7.3` on keycloak.md while a sibling line says "values.yaml resta
+  `26.6.2-1`" is a contradiction, not a confirmation. Search for the *negative
+  claims* the wiki makes about the file ("resta", "non ancora allineati", "per
+  costruzione non usato", "da allineare") and verify each against disk.
+- **Version/tag bumps are NOT harmless skippable churn when they contradict a
+  durable wiki claim** (e.g. a CVE fix) — see Step 3.
+- Keep the cross-check contents honest: void a "no durable change" conclusion
+  only after opening the actual files, never before.
 
 ---
 
@@ -85,11 +109,20 @@ API/config entries that matter, patterns. Rules:
 
 - **Contradictions:** if the change contradicts an existing claim, update the
   claim and note it (contradiction notice or a `sync` indication in the body).
+  This is the most common real gap: a commit often edits the wiki page AND the
+  code in the same change, so the diff *looks* already-synced — only the Step 2
+  content cross-check surfaces the contradiction.
+  This is the number-one capture: a commit frequently edits the wiki page AND
+  the code in the same change, so the diff alone hides the contradiction —
+  only the Step 2 content cross-check surfaces it.
 - **New knowledge:** a component/service/pattern that is new to the wiki and
   durably relevant gets a stub page (promotion rule: it appears in a real change
   AND adds lasting value). Extend cross-links.
 - **Skip transient detail:** command-line noise, one-off fixes, timing/version
-  churn. When in doubt, leave it out.
+  churn. **Exception:** a version/tag bump is durable when it *contradicts* a
+  wiki claim (e.g. a CVE fix the wiki still marks as "non ancora allineati") —
+  that is a Contradiction, update the claim. Skip only pure churn with no wiki
+  claim to reconcile.
 - **No change needed:** if nothing durable changed, do not force edits.
 
 ---
