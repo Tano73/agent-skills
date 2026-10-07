@@ -130,15 +130,20 @@ def resolve_link(from_rel: str, target: str, pages: dict[str, Path]) -> str | No
     except ValueError:
         return None
     parts: list[str] = []
+    escaped = False
     for part in resolved.split("/"):
         if part in ("", "."):
             continue
         if part == "..":
             if parts:
                 parts.pop()
+            else:
+                # Escapes the wiki root: keep a non-existent key so callers flag it.
+                escaped = True
             continue
         parts.append(part)
-    return "/".join(parts)
+    key = "/".join(parts)
+    return f"../{key}" if escaped else key
 
 
 def is_source_slug_target(key: str) -> bool:

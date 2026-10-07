@@ -143,6 +143,19 @@ def t_category_only_unaffected() -> None:
         assert not conflicts, f"expected no field_conflict issue, got: {conflicts}"
 
 
+def t_link_escaping_root_is_broken() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = _make_wiki_root(Path(tmp))
+        (root / "wiki" / "entities" / "foo.md").write_text(
+            "---\ntitle: \"Foo\"\ntype: entity\n---\n\n# Foo\n", encoding="utf-8"
+        )
+        (root / "wiki" / "overview.md").write_text(
+            "# Overview\n[Foo](../entities/foo.md) [ok](entities/foo.md)\n", encoding="utf-8"
+        )
+        broken = _issues_for(root, "overview.md", "broken_link")
+        assert len(broken) == 1 and "../entities/foo.md" in broken[0]["message"], broken
+
+
 TESTS = {
     "resource_only": t_resource_only,
     "source_file_only": t_source_file_only,
@@ -150,6 +163,7 @@ TESTS = {
     "resource_source_file_conflict": t_resource_source_file_conflict,
     "category_type_conflict": t_category_type_conflict,
     "category_only_unaffected": t_category_only_unaffected,
+    "link_escaping_root_is_broken": t_link_escaping_root_is_broken,
 }
 
 
